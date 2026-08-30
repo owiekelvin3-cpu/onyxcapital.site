@@ -1,0 +1,6 @@
+Contact: mailto:support@onyxcapital.site
+Contact: https://onyxcapital.site/help
+Preferred-Languages: en
+Canonical: https://onyxcapital.site/.well-known/security.txt
+Policy: https://onyxcapital.site/terms
+Acknowledgments: https://onyxcapital.site/help

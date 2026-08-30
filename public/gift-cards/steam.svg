@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" role="img" aria-label="Steam">
+  <circle cx="12" cy="12" r="11" fill="#1B2838"/>
+  <circle cx="8.5" cy="14.5" r="3.2" fill="#171A21" stroke="#C7D5E0" stroke-width="1.2"/>
+  <circle cx="8.5" cy="14.5" r="1.2" fill="#C7D5E0"/>
+  <path fill="#C7D5E0" d="M16.2 8.8c.9 0 1.7.3 2.3.9.6.6.9 1.4.9 2.3 0 .9-.3 1.7-.9 2.3l-2.8-2.8c.2-.4.3-.8.3-1.2 0-.5-.2-1-.5-1.4l2.7-2.1z"/>
+  <circle cx="16.2" cy="12" r="2.1" fill="#171A21" stroke="#C7D5E0" stroke-width="1"/>
+  <circle cx="16.2" cy="12" r=".8" fill="#66C0F4"/>
+</svg>

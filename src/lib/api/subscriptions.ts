@@ -71,6 +71,10 @@ export async function subscribeToTrader(
 
   if (existingError) throw new Error(existingError.message);
 
+  if (!Number.isFinite(params.allocation) || params.allocation <= 0) {
+    throw new Error("Copy trader price must be greater than zero");
+  }
+
   if (existing) {
     if (existing.status === "active") return existing as CopySubscriptionRow;
 

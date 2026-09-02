@@ -421,6 +421,7 @@
     "navGroupTools": "Tools",
     "navDashboard": "Dashboard",
     "navTrade": "Trade",
+    "navHoldings": "持仓",
     "navPortfolio": "Portfolio",
     "navDeposit": "Deposit",
     "navWithdraw": "Withdraw",
@@ -686,14 +687,14 @@
     "insufficientBalance": "该包的余额不足。"
   },
   "signals": {
-    "title": "交易信号",
+    "title": "交易信号套餐",
     "subtitle": "订阅接收专业交易信号。",
-    "balance": "可用余额",
+    "balance": "存款余额",
     "subscribe": "订阅",
     "subscribed": "成功订阅 {{name}}。",
     "activeSubs": "活跃订阅量",
     "expires": "过期",
-    "insufficientBalance": "该包的余额不足。"
+    "insufficientBalance": "余额不足"
   },
   "transactions": {
     "title": "交易",

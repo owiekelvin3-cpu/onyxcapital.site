@@ -30,6 +30,7 @@ import {
   faChevronLeft,
   faGlobe,
   faArrowTrendUp,
+  faArrowTrendDown,
   faStar,
   faClock,
   faLayerGroup,
@@ -67,6 +68,8 @@ import {
   faShareNodes,
   faMagnifyingGlassPlus,
   faCoins,
+  faTrash,
+  faPen,
 } from "@fortawesome/free-solid-svg-icons";
 import { cn } from "@/lib/utils";
 
@@ -93,6 +96,7 @@ function icon(def: IconDefinition, defaults?: { spin?: boolean }) {
 
 export const LayoutDashboard = icon(faGaugeHigh);
 export const TrendingUp = icon(faArrowTrendUp);
+export const TrendingDown = icon(faArrowTrendDown);
 export const Wallet = icon(faWallet);
 export const ArrowDownToLine = icon(faArrowDown);
 export const ArrowUpFromLine = icon(faArrowUp);
@@ -156,4 +160,6 @@ export const Download = icon(faDownload);
 export const Share = icon(faShareNodes);
 export const ZoomIn = icon(faMagnifyingGlassPlus);
 export const Coins = icon(faCoins);
+export const Trash = icon(faTrash);
+export const Pencil = icon(faPen);
 export const ImageIcon = Image;

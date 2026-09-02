@@ -10,9 +10,11 @@ import {
   ArrowUpFromLine,
   Bell,
   Bot,
+  Coins,
   Comments,
   FileCheck,
   LayoutDashboard,
+  LineChart,
   LogOut,
   MoreHorizontal,
   Receipt,
@@ -33,6 +35,8 @@ const MOBILE_TABS = [
 
 const MORE_MENU_ITEMS = [
   { href: "/dashboard/deposit", labelKey: "dashboard.navDeposit", icon: ArrowDownToLine },
+  { href: "/dashboard/trade", labelKey: "dashboard.navTrade", icon: LineChart },
+  { href: "/dashboard/holdings", labelKey: "dashboard.navHoldings", icon: Coins },
   { href: "/dashboard/portfolio", labelKey: "dashboard.navPortfolio", icon: Wallet },
   { href: "/dashboard/transactions", labelKey: "dashboard.transactions", icon: Receipt },
   { href: "/dashboard/notifications", labelKey: "dashboard.notifications", icon: Bell },

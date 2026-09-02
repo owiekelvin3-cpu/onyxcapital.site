@@ -2,6 +2,7 @@
 
 import { useMemo } from "react";
 import { toTradingViewSymbol } from "@/lib/tradingview-symbols";
+import { useTheme } from "@/components/theme/ThemeProvider";
 import { TradingViewWidget } from "./TradingViewWidget";
 
 const CHART_SCRIPT =
@@ -10,14 +11,18 @@ const CHART_SCRIPT =
 type TradingViewAdvancedChartProps = {
   symbol: string;
   interval?: string;
+  style?: "1" | "3";
   className?: string;
 };
 
 export function TradingViewAdvancedChart({
   symbol,
-  interval = "60",
+  interval = "15",
+  style = "1",
   className,
 }: TradingViewAdvancedChartProps) {
+  const { theme } = useTheme();
+  const isDark = theme === "dark";
   const tvSymbol = toTradingViewSymbol(symbol);
 
   const config = useMemo(
@@ -26,24 +31,24 @@ export function TradingViewAdvancedChart({
       symbol: tvSymbol,
       interval,
       timezone: "Etc/UTC",
-      theme: "dark",
-      style: "1",
+      theme: isDark ? "dark" : "light",
+      style,
       locale: "en",
       enable_publishing: false,
-      backgroundColor: "rgba(19, 23, 34, 1)",
-      gridColor: "rgba(42, 46, 57, 0.6)",
-      hide_top_toolbar: false,
+      backgroundColor: isDark ? "#1a1a1a" : "#ffffff",
+      gridColor: isDark ? "rgba(46, 46, 46, 0.6)" : "rgba(229, 231, 235, 0.8)",
+      hide_top_toolbar: true,
       hide_legend: false,
       save_image: false,
       calendar: false,
       hide_volume: false,
       allow_symbol_change: false,
-      withdateranges: true,
+      withdateranges: false,
       details: false,
       hotlist: false,
       support_host: "https://www.tradingview.com",
     }),
-    [tvSymbol, interval]
+    [tvSymbol, interval, style, isDark]
   );
 
   return (

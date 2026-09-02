@@ -12,6 +12,7 @@ import { LanguageSelector } from "@/components/i18n/LanguageSelector";
 import {
   FileCheck,
   LayoutDashboard,
+  LineChart,
   Wallet,
   ArrowDownToLine,
   ArrowUpFromLine,
@@ -20,6 +21,7 @@ import {
   Bell,
   Bot,
   Users,
+  Coins,
   Comments,
   Menu,
   X,
@@ -33,6 +35,8 @@ const NAV_GROUPS = [
     labelKey: "dashboard.navGroupOverview",
     items: [
       { labelKey: "dashboard.navDashboard", href: "/dashboard", icon: LayoutDashboard },
+      { labelKey: "dashboard.navTrade", href: "/dashboard/trade", icon: LineChart },
+      { labelKey: "dashboard.navHoldings", href: "/dashboard/holdings", icon: Coins },
       { labelKey: "dashboard.navPortfolio", href: "/dashboard/portfolio", icon: Wallet },
     ],
   },

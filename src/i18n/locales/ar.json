@@ -421,6 +421,7 @@
     "navGroupTools": "Tools",
     "navDashboard": "Dashboard",
     "navTrade": "Trade",
+    "navHoldings": "المقتنيات",
     "navPortfolio": "Portfolio",
     "navDeposit": "Deposit",
     "navWithdraw": "Withdraw",
@@ -686,14 +687,14 @@
     "insufficientBalance": "الرصيد غير كافي لهذه الباقة."
   },
   "signals": {
-    "title": "إشارات التداول",
+    "title": "باقات إشارات التداول",
     "subtitle": "اشترك لتلقي إشارات التداول المهنية.",
-    "balance": "الرصيد المتاح",
+    "balance": "رصيد الإيداع",
     "subscribe": "يشترك",
     "subscribed": "تم الاشتراك في {{name}} بنجاح.",
     "activeSubs": "الاشتراكات النشطة",
     "expires": "تنتهي",
-    "insufficientBalance": "الرصيد غير كافي لهذه الباقة."
+    "insufficientBalance": "الرصيد غير كافٍ"
   },
   "transactions": {
     "title": "المعاملات",

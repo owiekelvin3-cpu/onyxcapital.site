@@ -4,11 +4,14 @@ import { useCallback, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Users } from "@/components/icons";
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
+import { CopyTraderRoster } from "@/components/admin/CopyTraderRoster";
 import { StatusBadge } from "@/components/admin/StatusBadge";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { createClient } from "@/lib/supabase/client";
 import { adminAdjustCopyTradingProfit } from "@/lib/api/copy-trading";
+import { getCopyTraders } from "@/lib/api/copy-traders";
+import type { CopyTraderProfile } from "@/lib/copy-traders";
 import { formatCurrency, formatDate, cn } from "@/lib/utils";
 
 type CopySubRow = {
@@ -35,23 +38,36 @@ export default function AdminCopyTradingPage() {
   const [amount, setAmount] = useState("");
   const [note, setNote] = useState("");
   const [busy, setBusy] = useState(false);
+  const [traders, setTraders] = useState<CopyTraderProfile[]>([]);
+
+  const loadTraders = useCallback(async () => {
+    const supabase = createClient();
+    const catalog = await getCopyTraders(supabase);
+    setTraders(catalog);
+  }, []);
 
   const load = useCallback(async () => {
     setLoading(true);
     setError("");
-    const supabase = createClient();
-    let query = supabase
-      .from("copy_trading_subscriptions")
-      .select("*, profiles:user_id(email, full_name)")
-      .order("created_at", { ascending: false })
-      .limit(100);
+    try {
+      const supabase = createClient();
+      let query = supabase
+        .from("copy_trading_subscriptions")
+        .select("*, profiles:user_id(email, full_name)")
+        .order("created_at", { ascending: false })
+        .limit(100);
 
-    if (filter === "active") query = query.eq("status", "active");
+      if (filter === "active") query = query.eq("status", "active");
 
-    const { data, error: err } = await query;
-    if (err) setError(err.message);
-    else setRows((data as CopySubRow[]) ?? []);
-    setLoading(false);
+      const [subsRes, catalog] = await Promise.all([query, getCopyTraders(supabase)]);
+      if (subsRes.error) setError(subsRes.error.message);
+      else setRows((subsRes.data as CopySubRow[]) ?? []);
+      setTraders(catalog);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Could not load copy trading");
+    } finally {
+      setLoading(false);
+    }
   }, [filter]);
 
   useEffect(() => {
@@ -96,7 +112,7 @@ export default function AdminCopyTradingPage() {
     void adjust(subId, mode === "profit" ? raw : -raw);
   };
 
-  if (loading && rows.length === 0) {
+  if (loading && rows.length === 0 && traders.length === 0) {
     return (
       <div className="flex min-h-[40vh] items-center justify-center text-sm text-text-tertiary">
         {t("common.loading")}…
@@ -119,6 +135,13 @@ export default function AdminCopyTradingPage() {
           {success}
         </p>
       )}
+
+      <CopyTraderRoster
+        traders={traders}
+        onChange={loadTraders}
+        onError={setError}
+        onSuccess={setSuccess}
+      />
 
       <div className="grid grid-cols-2 gap-1.5 sm:flex sm:flex-wrap sm:rounded-xl sm:border sm:border-border sm:bg-bg-secondary/30 sm:p-1">
         {(

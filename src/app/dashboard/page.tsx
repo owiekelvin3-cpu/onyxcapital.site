@@ -8,6 +8,8 @@ import {
 import { getCachedLiveMarketPairs } from "@/lib/live-prices";
 import { chartFromTrades } from "@/lib/chart-data";
 import { DashboardOverview } from "@/components/dashboard/DashboardOverview";
+import { activeSignalPlanFromPackages } from "@/lib/signal-plans";
+import type { SignalPackageRow } from "@/lib/supabase/types";
 
 export default async function DashboardPage() {
   const supabase = await createClient();
@@ -18,12 +20,12 @@ export default async function DashboardPage() {
   const { data: profile } = user
     ? await supabase
         .from("profiles")
-        .select("full_name, avatar_url, signal_pct")
+        .select("full_name, avatar_url")
         .eq("id", user.id)
         .maybeSingle()
     : { data: null };
 
-  const [summary, recentTrades, openOrders, profitTotal, marketPairs, tradesCount] =
+  const [summary, recentTrades, openOrders, profitTotal, marketPairs, tradesCount, packagesRes] =
     await Promise.all([
       user ? getPortfolioSummary(supabase, user.id) : Promise.resolve({
         cashBalance: 0,
@@ -45,10 +47,22 @@ export default async function DashboardPage() {
             .eq("user_id", user.id)
             .then(({ count }) => count ?? 0)
         : Promise.resolve(0),
+      user
+        ? supabase
+            .from("signal_packages")
+            .select("package_id, package_name, status, expires_at")
+            .eq("user_id", user.id)
+        : Promise.resolve({ data: [] as SignalPackageRow[] }),
     ]);
 
   const chartData = chartFromTrades(summary.totalValue, recentTrades);
   const displayName = profile?.full_name?.trim() ?? user?.email?.split("@")[0] ?? "";
+  const signalPlan = activeSignalPlanFromPackages(
+    (packagesRes.data ?? []) as Pick<
+      SignalPackageRow,
+      "package_id" | "package_name" | "status" | "expires_at"
+    >[]
+  );
 
   return (
     <DashboardOverview
@@ -62,7 +76,9 @@ export default async function DashboardPage() {
       chartData={chartData}
       recentTrades={recentTrades}
       marketPairs={marketPairs}
-      signalPct={Number(profile?.signal_pct ?? 0)}
+      signalPlanId={signalPlan?.id}
+      signalPlanName={signalPlan?.name}
+      signalExpiresAt={signalPlan?.expiresAt}
     />
   );
 }

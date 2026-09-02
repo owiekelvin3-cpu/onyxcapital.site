@@ -44,14 +44,14 @@ export default function AdminSignalsPage() {
   const [grantUserId, setGrantUserId] = useState("");
   const [bulkNote, setBulkNote] = useState("Platform signal adjustment");
   const [grantDays, setGrantDays] = useState("30");
-  const [grantTier, setGrantTier] = useState("starter");
+  const [grantTier, setGrantTier] = useState("newbie");
 
   const [symbol, setSymbol] = useState("BTC/USD");
   const [direction, setDirection] = useState<"buy" | "sell">("buy");
   const [entry, setEntry] = useState("");
   const [target, setTarget] = useState("");
   const [stop, setStop] = useState("");
-  const [minTier, setMinTier] = useState("starter");
+  const [minTier, setMinTier] = useState("newbie");
   const [confidence, setConfidence] = useState("75");
   const [notes, setNotes] = useState("");
 

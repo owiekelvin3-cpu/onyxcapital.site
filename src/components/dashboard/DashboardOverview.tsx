@@ -15,7 +15,9 @@ type Props = {
   chartData: ChartPoint[];
   recentTrades: TradeRow[];
   marketPairs: MarketPair[];
-  signalPct?: number;
+  signalPlanId?: string | null;
+  signalPlanName?: string | null;
+  signalExpiresAt?: string | null;
 };
 
 export function DashboardOverview(props: Props) {

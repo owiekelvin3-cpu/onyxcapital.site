@@ -421,6 +421,7 @@
     "navGroupTools": "Tools",
     "navDashboard": "Dashboard",
     "navTrade": "Trade",
+    "navHoldings": "Bestände",
     "navPortfolio": "Portfolio",
     "navDeposit": "Deposit",
     "navWithdraw": "Withdraw",
@@ -686,14 +687,14 @@
     "insufficientBalance": "Unzureichendes Guthaben für dieses Paket."
   },
   "signals": {
-    "title": "Handelssignale",
+    "title": "Trading-Signalpakete",
     "subtitle": "Abonnieren Sie, um professionelle Handelssignale zu erhalten.",
-    "balance": "Verfügbares Guthaben",
+    "balance": "Einzahlungssaldo",
     "subscribe": "Abonnieren",
     "subscribed": "{{name}} erfolgreich abonniert.",
     "activeSubs": "Aktive Abonnements",
     "expires": "Läuft ab",
-    "insufficientBalance": "Unzureichendes Guthaben für dieses Paket."
+    "insufficientBalance": "Unzureichendes Guthaben"
   },
   "transactions": {
     "title": "Transaktionen",

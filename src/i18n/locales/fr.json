@@ -421,6 +421,7 @@
     "navGroupTools": "Tools",
     "navDashboard": "Dashboard",
     "navTrade": "Trade",
+    "navHoldings": "Avoirs",
     "navPortfolio": "Portfolio",
     "navDeposit": "Deposit",
     "navWithdraw": "Withdraw",
@@ -686,14 +687,14 @@
     "insufficientBalance": "Solde insuffisant pour ce forfait."
   },
   "signals": {
-    "title": "Signaux de trading",
+    "title": "Packs de signaux de trading",
     "subtitle": "Abonnez-vous pour recevoir des signaux de trading professionnels.",
-    "balance": "Montant disponible",
+    "balance": "Solde de dépôt",
     "subscribe": "S'abonner",
     "subscribed": "Abonné à {{name}} avec succès.",
     "activeSubs": "abonnements actifs",
     "expires": "Expire",
-    "insufficientBalance": "Solde insuffisant pour ce forfait."
+    "insufficientBalance": "Solde insuffisant"
   },
   "transactions": {
     "title": "Transactions",

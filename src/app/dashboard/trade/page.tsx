@@ -1,5 +1,7 @@
-import { redirect } from "next/navigation";
+"use client";
+
+import { LiveTradingDesk } from "@/components/trading/LiveTradingDesk";
 
 export default function TradePage() {
-  redirect("/dashboard");
+  return <LiveTradingDesk />;
 }

@@ -81,11 +81,6 @@ const nextConfig: NextConfig = {
         permanent: false,
       },
       {
-        source: "/dashboard/trade",
-        destination: "/dashboard",
-        permanent: false,
-      },
-      {
         source: "/admin/meme-coins",
         destination: "/admin",
         permanent: false,

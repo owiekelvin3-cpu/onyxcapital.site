@@ -16,7 +16,7 @@ export async function getUserSignalContext(
   supabase: SupabaseClient,
   userId: string
 ): Promise<UserSignalContext> {
-  const [profileRes, balance, packagesRes, signalsRes] = await Promise.all([
+  const [profileRes, balance, packagesRes] = await Promise.all([
     supabase.from("profiles").select("signal_pct").eq("id", userId).maybeSingle(),
     getUsdBalance(supabase, userId),
     supabase
@@ -24,13 +24,6 @@ export async function getUserSignalContext(
       .select("id, user_id, package_name, package_id, price, status, expires_at, admin_granted, created_at")
       .eq("user_id", userId)
       .order("created_at", { ascending: false }),
-    supabase
-      .from("trading_signals")
-      .select(
-        "id, symbol, direction, entry_price, target_price, stop_price, status, min_tier, confidence, outcome, notes, published_at, closed_at"
-      )
-      .order("published_at", { ascending: false })
-      .limit(40),
   ]);
 
   const activePackages = ((packagesRes.data ?? []) as SignalPackageRow[]).filter(
@@ -46,7 +39,7 @@ export async function getUserSignalContext(
     balance,
     tierRank,
     activePackages,
-    signals: (signalsRes.data ?? []) as TradingSignalRow[],
+    signals: [],
     plans: SIGNAL_PLANS,
   };
 }

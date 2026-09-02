@@ -14,6 +14,7 @@ export const MARKET_PAIRS: MarketPair[] = [
   { symbol: "BNB/USDT", name: "BNB", price: 612.3, change24h: 0.92, volume24h: 420000000, category: "crypto" },
   { symbol: "XRP/USDT", name: "XRP", price: 2.34, change24h: 3.12, volume24h: 780000000, category: "crypto" },
   { symbol: "AAPL", name: "Apple Inc.", price: 228.45, change24h: 0.67, volume24h: 52000000, category: "stock" },
+  { symbol: "MSFT", name: "Microsoft", price: 428.12, change24h: 1.5, volume24h: 41000000, category: "stock" },
   { symbol: "TSLA", name: "Tesla Inc.", price: 412.89, change24h: -1.23, volume24h: 89000000, category: "stock" },
   { symbol: "NVDA", name: "NVIDIA Corp.", price: 134.56, change24h: 2.89, volume24h: 67000000, category: "stock" },
   { symbol: "EUR/USD", name: "Euro / US Dollar", price: 1.0842, change24h: -0.12, volume24h: 1200000000, category: "forex" },

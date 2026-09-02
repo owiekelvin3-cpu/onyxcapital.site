@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { motion } from "framer-motion";
 import type { CopyTraderProfile } from "@/lib/copy-traders";
-import { formatPercent } from "@/lib/utils";
+import { formatCurrency, formatPercent } from "@/lib/utils";
 import { Button } from "@/components/ui/Button";
 import { Loader2, Star, TrendingUp, Users } from "@/components/icons";
 import { TraderAvatar } from "./TraderAvatar";
@@ -14,6 +14,7 @@ export function CopyTraderCard({
   isActive,
   userId,
   loading,
+  canAfford,
   onCopy,
   onUncopy,
 }: {
@@ -22,6 +23,7 @@ export function CopyTraderCard({
   isActive: boolean;
   userId: string | null;
   loading: boolean;
+  canAfford: boolean;
   onCopy: () => void;
   onUncopy: () => void;
 }) {
@@ -80,6 +82,11 @@ export function CopyTraderCard({
         </div>
       </div>
 
+      <div className="mt-3 flex items-baseline justify-between rounded-xl border border-accent/20 bg-accent/5 px-3 py-2">
+        <p className="text-[10px] uppercase tracking-wide text-text-tertiary">Copy price</p>
+        <p className="text-sm font-bold tabular-nums text-text-primary">{formatCurrency(trader.price)}</p>
+      </div>
+
       <div className="mt-4 pt-1">
         {isActive ? (
           <Button
@@ -102,18 +109,20 @@ export function CopyTraderCard({
           >
             {loading ? (
               <Loader2 className="h-3.5 w-3.5 animate-spin" />
-            ) : (
+            ) : canAfford ? (
               <>
                 <TrendingUp className="h-3.5 w-3.5" />
-                Copy trader
+                Copy for {formatCurrency(trader.price)}
               </>
+            ) : (
+              <>Deposit {formatCurrency(trader.price)} to copy</>
             )}
           </Button>
         ) : (
           <Link href="/register" className="block">
             <Button className="w-full" size="sm">
               <TrendingUp className="h-3.5 w-3.5" />
-              Copy trader
+              Copy for {formatCurrency(trader.price)}
             </Button>
           </Link>
         )}

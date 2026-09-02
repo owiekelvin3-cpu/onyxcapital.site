@@ -21,6 +21,8 @@ export type NavLink = {
 
 const DASHBOARD_LINKS: NavLink[] = [
   { labelKey: "dashboard.navDashboard", href: "/dashboard", exact: true },
+  { labelKey: "dashboard.navTrade", href: "/dashboard/trade" },
+  { labelKey: "dashboard.navHoldings", href: "/dashboard/holdings" },
   { labelKey: "nav.markets", href: "/dashboard/portfolio" },
   { labelKey: "dashboard.aiTrading", href: "/dashboard/ai-trading" },
   { labelKey: "dashboard.copyTrading", href: "/dashboard/copy-trading" },

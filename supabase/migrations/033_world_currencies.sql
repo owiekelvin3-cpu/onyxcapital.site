@@ -1,0 +1,226 @@
+-- World currencies: full ISO 4217 support with FX reference rates
+
+ALTER TABLE public.profiles
+  DROP CONSTRAINT IF EXISTS profiles_preferred_currency_check;
+
+ALTER TABLE public.profiles
+  DROP CONSTRAINT IF EXISTS profiles_preferred_currency_format;
+
+ALTER TABLE public.profiles
+  ADD CONSTRAINT profiles_preferred_currency_format
+  CHECK (preferred_currency ~ '^[A-Z]{3}$');
+
+CREATE TABLE IF NOT EXISTS public.fx_rates (
+  currency text PRIMARY KEY CHECK (char_length(currency) = 3),
+  units_per_usd numeric NOT NULL CHECK (units_per_usd > 0),
+  updated_at timestamptz NOT NULL DEFAULT now()
+);
+
+INSERT INTO public.fx_rates (currency, units_per_usd)
+VALUES
+  ('AED', 3.6725),
+  ('AFN', 66.105065),
+  ('ALL', 81.808627),
+  ('AMD', 366.654932),
+  ('ANG', 1.79),
+  ('AOA', 925.515332),
+  ('ARS', 1474.7696),
+  ('AUD', 1.428743),
+  ('AWG', 1.79),
+  ('AZN', 1.699964),
+  ('BAM', 1.70838),
+  ('BBD', 2),
+  ('BDT', 123.226896),
+  ('BGN', 1.70838),
+  ('BHD', 0.376),
+  ('BIF', 2989.732238),
+  ('BMD', 1),
+  ('BND', 1.290033),
+  ('BOB', 10.486499),
+  ('BRL', 5.082509),
+  ('BSD', 1),
+  ('BTN', 96.403471),
+  ('BWP', 13.853036),
+  ('BYN', 2.88099),
+  ('BZD', 2),
+  ('CAD', 1.403662),
+  ('CDF', 2280.07687),
+  ('CHF', 0.808262),
+  ('CLF', 0.02339),
+  ('CLP', 924.511391),
+  ('CNH', 6.77166),
+  ('CNY', 6.78034),
+  ('COP', 3226.083313),
+  ('CRC', 453.870354),
+  ('CUC', 1),
+  ('CUP', 24),
+  ('CVE', 96.314362),
+  ('CZK', 21.127001),
+  ('DJF', 177.721),
+  ('DKK', 6.517061),
+  ('DOP', 58.291974),
+  ('DZD', 133.037653),
+  ('EGP', 50.537457),
+  ('ERN', 15),
+  ('ETB', 160.353409),
+  ('EUR', 0.873482),
+  ('FJD', 2.238751),
+  ('FKP', 0.741466),
+  ('FOK', 6.516982),
+  ('GBP', 0.741467),
+  ('GEL', 2.630634),
+  ('GGP', 0.741466),
+  ('GHS', 11.539025),
+  ('GIP', 0.741466),
+  ('GMD', 74.329059),
+  ('GNF', 8776.787081),
+  ('GTQ', 7.623221),
+  ('GYD', 209.229704),
+  ('HKD', 7.83962),
+  ('HNL', 26.747637),
+  ('HRK', 6.581241),
+  ('HTG', 130.664572),
+  ('HUF', 315.09853),
+  ('IDR', 17992.306847),
+  ('ILS', 3.015358),
+  ('IMP', 0.741466),
+  ('INR', 96.403741),
+  ('IQD', 1309.364555),
+  ('IRR', 1280277.840821),
+  ('ISK', 124.913221),
+  ('JEP', 0.741466),
+  ('JMD', 158.2697),
+  ('JOD', 0.709),
+  ('JPY', 162.330823),
+  ('KES', 129.304761),
+  ('KGS', 87.451799),
+  ('KHR', 4043.765917),
+  ('KID', 1.428743),
+  ('KMF', 429.72439),
+  ('KPW', 1),
+  ('KRW', 1480.158053),
+  ('KWD', 0.30875),
+  ('KYD', 0.833333),
+  ('KZT', 471.197868),
+  ('LAK', 22343.313809),
+  ('LBP', 89500),
+  ('LKR', 336.041043),
+  ('LRD', 180.898426),
+  ('LSL', 16.401124),
+  ('LYD', 6.399924),
+  ('MAD', 9.326951),
+  ('MDL', 17.535886),
+  ('MGA', 4297.742314),
+  ('MKD', 53.966125),
+  ('MMK', 2101.472115),
+  ('MNT', 3602.309506),
+  ('MOP', 8.074686),
+  ('MRU', 40.101214),
+  ('MUR', 47.022422),
+  ('MVR', 15.442526),
+  ('MWK', 1742.566439),
+  ('MXN', 17.423234),
+  ('MYR', 4.07241),
+  ('MZN', 63.590989),
+  ('NAD', 16.401124),
+  ('NGN', 1379.635134),
+  ('NIO', 36.761152),
+  ('NOK', 9.666273),
+  ('NPR', 154.245553),
+  ('NZD', 1.711376),
+  ('OMR', 0.384497),
+  ('PAB', 1),
+  ('PEN', 3.391282),
+  ('PGK', 4.426423),
+  ('PHP', 61.651002),
+  ('PKR', 277.896973),
+  ('PLN', 3.78126),
+  ('PYG', 6039.410334),
+  ('QAR', 3.64),
+  ('RON', 4.569955),
+  ('RSD', 102.441826),
+  ('RUB', 77.781843),
+  ('RWF', 1469.65013),
+  ('SAR', 3.75),
+  ('SBD', 7.96211),
+  ('SCR', 14.271592),
+  ('SDG', 511.435087),
+  ('SEK', 9.637906),
+  ('SGD', 1.290033),
+  ('SHP', 0.741466),
+  ('SLE', 24.357914),
+  ('SLL', 24357.91394),
+  ('SOS', 571.638099),
+  ('SRD', 37.859009),
+  ('SSP', 4796.60982),
+  ('STN', 21.40028),
+  ('SVC', 1),
+  ('SYP', 121.803769),
+  ('SZL', 16.401124),
+  ('THB', 33.572316),
+  ('TJS', 9.239243),
+  ('TMT', 3.499731),
+  ('TND', 2.943976),
+  ('TOP', 2.381949),
+  ('TRY', 47.097698),
+  ('TTD', 6.76627),
+  ('TVD', 1.428743),
+  ('TWD', 32.247891),
+  ('TZS', 2628.276963),
+  ('UAH', 44.645286),
+  ('UGX', 3681.158678),
+  ('USD', 1),
+  ('UYU', 40.128299),
+  ('UZS', 12141.427271),
+  ('VES', 732.4787),
+  ('VND', 26178.215137),
+  ('VUV', 119.331585),
+  ('WST', 2.708108),
+  ('XAF', 572.965854),
+  ('XCD', 2.7),
+  ('XCG', 1.79),
+  ('XDR', 0.733917),
+  ('XOF', 572.965854),
+  ('XPF', 104.234212),
+  ('XSU', 1),
+  ('YER', 237.778202),
+  ('ZAR', 16.401155),
+  ('ZMW', 18.246511),
+  ('ZWG', 26.6122),
+  ('ZWL', 26.6122)
+ON CONFLICT (currency) DO UPDATE SET
+  units_per_usd = EXCLUDED.units_per_usd,
+  updated_at = now();
+
+CREATE OR REPLACE FUNCTION public.normalize_account_currency(p_code text)
+RETURNS text
+LANGUAGE plpgsql
+STABLE
+AS $$
+DECLARE
+  v_code text := upper(trim(COALESCE(p_code, '')));
+BEGIN
+  IF v_code !~ '^[A-Z]{3}$' THEN
+    RETURN 'USD';
+  END IF;
+  IF EXISTS (SELECT 1 FROM public.fx_rates WHERE currency = v_code) THEN
+    RETURN v_code;
+  END IF;
+  RETURN 'USD';
+END;
+$$;
+
+CREATE OR REPLACE FUNCTION public.fx_units_per_usd(p_currency text)
+RETURNS numeric
+LANGUAGE sql
+STABLE
+AS $$
+  SELECT COALESCE(
+    (SELECT units_per_usd FROM public.fx_rates WHERE currency = public.normalize_account_currency(p_currency)),
+    1.0
+  );
+$$;
+
+ALTER TABLE public.fx_rates ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Anyone can read fx rates" ON public.fx_rates;
+CREATE POLICY "Anyone can read fx rates" ON public.fx_rates FOR SELECT USING (true);

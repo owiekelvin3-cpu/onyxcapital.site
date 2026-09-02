@@ -17,6 +17,20 @@ export const DASHBOARD_SEARCH_ITEMS: DashboardSearchItem[] = [
     keywords: ["home", "overview", "balance", "dashboard"],
   },
   {
+    id: "trade",
+    href: "/dashboard/trade",
+    labelKey: "dashboard.navTrade",
+    groupKey: "dashboard.navGroupOverview",
+    keywords: ["trade", "live", "spot", "chart", "buy", "sell", "forex", "crypto"],
+  },
+  {
+    id: "holdings",
+    href: "/dashboard/holdings",
+    labelKey: "dashboard.navHoldings",
+    groupKey: "dashboard.navGroupOverview",
+    keywords: ["holdings", "assets", "balance", "fund holding", "bitcoin", "stocks"],
+  },
+  {
     id: "portfolio",
     href: "/dashboard/portfolio",
     labelKey: "dashboard.navPortfolio",

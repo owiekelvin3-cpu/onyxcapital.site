@@ -421,6 +421,7 @@
     "navGroupTools": "Tools",
     "navDashboard": "Dashboard",
     "navTrade": "Trade",
+    "navHoldings": "Holdings",
     "navPortfolio": "Portfolio",
     "navDeposit": "Deposit",
     "navWithdraw": "Withdraw",
@@ -686,14 +687,14 @@
     "insufficientBalance": "Saldo insuficiente para este paquete."
   },
   "signals": {
-    "title": "Señales comerciales",
+    "title": "Paquetes de señales de trading",
     "subtitle": "Suscríbase para recibir señales comerciales profesionales.",
-    "balance": "Saldo disponible",
+    "balance": "Saldo de depósito",
     "subscribe": "Suscribir",
     "subscribed": "Suscrito a {{name}} exitosamente.",
     "activeSubs": "Suscripciones activas",
     "expires": "Vence",
-    "insufficientBalance": "Saldo insuficiente para este paquete."
+    "insufficientBalance": "Saldo insuficiente"
   },
   "transactions": {
     "title": "Transacciones",

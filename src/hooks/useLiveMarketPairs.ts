@@ -25,6 +25,7 @@ export function useLiveMarketPairs(initial: MarketPair[], intervalMs = 30_000) {
     }
 
     const id = window.setInterval(refresh, intervalMs);
+    void refresh();
     return () => {
       cancelled = true;
       window.clearInterval(id);

@@ -24,6 +24,7 @@ import {
   Share,
   Shield,
   Users,
+  Coins,
   Wallet,
   Zap,
 } from "@/components/icons";
@@ -32,8 +33,10 @@ import { clearAdminSession } from "@/lib/auth-guards";
 import { useDashboardSearch } from "@/components/dashboard/DashboardSearchProvider";
 
 const MAIN_MENU = [
-  { label: "Overview", href: "/dashboard", icon: LayoutDashboard, exact: true },
-  { label: "Portfolio", href: "/dashboard/portfolio", icon: Wallet },
+      { label: "Overview", href: "/dashboard", icon: LayoutDashboard, exact: true },
+      { label: "Live Trading", href: "/dashboard/trade", icon: LineChart },
+      { label: "Holdings", href: "/dashboard/holdings", icon: Coins },
+      { label: "Portfolio", href: "/dashboard/portfolio", icon: Wallet },
   { label: "Deposit", href: "/dashboard/deposit", icon: ArrowDownToLine },
   { label: "Withdraw", href: "/dashboard/withdraw", icon: ArrowUpFromLine },
   { label: "Transactions", href: "/dashboard/transactions", icon: Receipt },

@@ -8,7 +8,7 @@ import {
 import { getCachedLiveMarketPairs } from "@/lib/live-prices";
 import { chartFromTrades } from "@/lib/chart-data";
 import { DashboardOverview } from "@/components/dashboard/DashboardOverview";
-import { activeSignalPlanFromPackages } from "@/lib/signal-plans";
+import { activeSignalPlanFromPackages, resolveDisplaySignalPct } from "@/lib/signal-plans";
 import type { SignalPackageRow } from "@/lib/supabase/types";
 
 export default async function DashboardPage() {
@@ -76,7 +76,7 @@ export default async function DashboardPage() {
       chartData={chartData}
       recentTrades={recentTrades}
       marketPairs={marketPairs}
-      signalPct={Number(profile?.signal_pct ?? 0)}
+      signalPct={resolveDisplaySignalPct(Number(profile?.signal_pct ?? 0), signalPlan?.id)}
       signalPlanName={signalPlan?.name}
       signalExpiresAt={signalPlan?.expiresAt}
     />

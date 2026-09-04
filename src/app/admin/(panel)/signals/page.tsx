@@ -12,7 +12,7 @@ import {
   grantAdminUserSignal,
   setAdminUserSignalPct,
 } from "@/lib/admin-api";
-import { SIGNAL_PLANS, signalTierLabel } from "@/lib/signal-plans";
+import { SIGNAL_PLANS, activeSignalPlanFromPackages, resolveDisplaySignalPct, signalTierLabel } from "@/lib/signal-plans";
 import { getSignalStrength } from "@/lib/signal-strength";
 import type { TradingSignalRow } from "@/lib/supabase/types";
 import { cn, formatDate, formatPercent } from "@/lib/utils";
@@ -24,7 +24,12 @@ type UserRow = {
   full_name: string | null;
   signal_pct: number;
   role: string;
+  plan_id?: string | null;
 };
+
+function effectiveUserPct(user: UserRow) {
+  return resolveDisplaySignalPct(user.signal_pct ?? 0, user.plan_id);
+}
 
 type TabId = "allocation" | "desk";
 
@@ -60,7 +65,7 @@ export default function AdminSignalsPage() {
     setLoading(true);
     setError("");
     const supabase = createClient();
-    const [usersRes, signalsRes] = await Promise.all([
+    const [usersRes, signalsRes, packagesRes] = await Promise.all([
       supabase
         .from("profiles")
         .select("id, email, full_name, signal_pct, role")
@@ -72,10 +77,32 @@ export default function AdminSignalsPage() {
         .select("*")
         .order("published_at", { ascending: false })
         .limit(40),
+      supabase
+        .from("signal_packages")
+        .select("user_id, package_id, package_name, status, expires_at")
+        .eq("status", "active")
+        .limit(2000),
     ]);
     if (usersRes.error) setError(usersRes.error.message);
     else {
-      const rows = (usersRes.data as UserRow[]) ?? [];
+      const pkgsByUser = new Map<
+        string,
+        Array<{ package_id?: string | null; package_name?: string | null; status: string; expires_at?: string | null }>
+      >();
+      for (const row of packagesRes.data ?? []) {
+        const uid = (row as { user_id: string }).user_id;
+        const list = pkgsByUser.get(uid) ?? [];
+        list.push(row);
+        pkgsByUser.set(uid, list);
+      }
+      const rows = ((usersRes.data as UserRow[]) ?? []).map((u) => {
+        const plan = activeSignalPlanFromPackages(pkgsByUser.get(u.id) ?? []);
+        return {
+          ...u,
+          plan_id: plan?.id ?? null,
+          signal_pct: resolveDisplaySignalPct(u.signal_pct ?? 0, plan?.id),
+        };
+      });
       setUsers(rows);
       setDraftPct(
         Object.fromEntries(rows.map((u) => [u.id, String(u.signal_pct ?? 0)]))
@@ -145,7 +172,7 @@ export default function AdminSignalsPage() {
   }
 
   async function nudgeUserPct(user: UserRow, delta: number) {
-    const next = Math.min(100, Math.max(0, Math.round((user.signal_pct ?? 0) + delta)));
+    const next = Math.min(100, Math.max(0, Math.round(effectiveUserPct(user) + delta)));
     setSavingUserId(user.id);
     setError("");
     setSuccess("");

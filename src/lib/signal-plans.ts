@@ -122,8 +122,27 @@ export function userTierRankFromPackages(
 export type ActiveSignalPlan = {
   id: string;
   name: string;
+  pct: number;
   expiresAt: string | null;
 };
+
+/**
+ * Overview allocation: the active plan's % unless an admin override is stored.
+ * Legacy subscribe used to write 100% for every package — that is not treated as an override.
+ */
+export function resolveDisplaySignalPct(
+  storedPct: number,
+  planId?: string | null,
+  hasAdminOverride = false
+): number {
+  const stored = Math.max(0, Math.min(100, Number.isFinite(storedPct) ? storedPct : 0));
+  const planPct = signalPlanPct(planId);
+  if (hasAdminOverride) return stored;
+  if (planPct <= 0) return stored;
+  if (stored >= 100 && planPct < 100) return planPct;
+  if (stored <= 0) return planPct;
+  return stored;
+}
 
 export function activeSignalPlanFromPackages(
   packages: Array<{
@@ -146,9 +165,11 @@ export function activeSignalPlanFromPackages(
   );
   const plan = best.package_id ? signalPlanById(best.package_id) : undefined;
 
+  const id = plan?.id ?? best.package_id ?? "";
   return {
-    id: plan?.id ?? best.package_id ?? "",
+    id,
     name: plan?.name ?? signalTierLabel(best.package_id ?? best.package_name ?? ""),
+    pct: plan?.pct ?? signalPlanPct(id),
     expiresAt: best.expires_at ?? null,
   };
 }

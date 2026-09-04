@@ -16,6 +16,7 @@ import {
   setAdminUserSignalPct,
 } from "@/lib/admin-api";
 import type { AdminUserFee, Profile } from "@/lib/admin-types";
+import { activeSignalPlanFromPackages, resolveDisplaySignalPct } from "@/lib/signal-plans";
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 import { AdminMobilePanel } from "@/components/admin/AdminMobilePanel";
 import { StatusBadge } from "@/components/admin/StatusBadge";
@@ -114,9 +115,17 @@ export default function AdminUsersPage() {
     setDeleteReason("");
     try {
       const d = await fetchAdminUserDetails(id);
+      const supabase = createClient();
+      const { data: packages } = await supabase
+        .from("signal_packages")
+        .select("package_id, package_name, status, expires_at")
+        .eq("user_id", id);
+      const plan = activeSignalPlanFromPackages(packages ?? []);
+      const allocation = resolveDisplaySignalPct(Number(d.profile.signal_pct ?? 0), plan?.id);
+      d.profile.signal_pct = allocation;
       setDetails(d);
       setWithdrawalCodeDraft(d.profile.withdrawal_code ?? "");
-      setSignalPctDraft(String(d.profile.signal_pct ?? 0));
+      setSignalPctDraft(String(allocation));
     } catch (e) {
       showFeedback(e instanceof Error ? e.message : "Could not load user", "error");
       setDetails(null);

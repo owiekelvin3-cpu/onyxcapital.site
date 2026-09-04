@@ -1,5 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { SIGNAL_PLANS, type SignalPlan, type SignalTier, userTierRankFromPackages } from "@/lib/signal-plans";
+import { SIGNAL_PLANS, resolveDisplaySignalPct, signalTierRank, type SignalPlan, type SignalTier, userTierRankFromPackages } from "@/lib/signal-plans";
 import type { SignalPackageRow, TradingSignalRow } from "@/lib/supabase/types";
 import { getUsdBalance } from "@/lib/api/trading";
 
@@ -33,9 +33,13 @@ export async function getUserSignalContext(
   );
 
   const tierRank = userTierRankFromPackages((packagesRes.data ?? []) as SignalPackageRow[]);
+  const bestPlanId = activePackages.reduce<string | null>((top, row) => {
+    if (!top) return row.package_id ?? null;
+    return signalTierRank(row.package_id) > signalTierRank(top) ? row.package_id ?? top : top;
+  }, null);
 
   return {
-    signalPct: Number(profileRes.data?.signal_pct ?? 0),
+    signalPct: resolveDisplaySignalPct(Number(profileRes.data?.signal_pct ?? 0), bestPlanId),
     balance,
     tierRank,
     activePackages,

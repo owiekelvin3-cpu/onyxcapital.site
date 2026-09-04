@@ -119,10 +119,8 @@ export function SignalStrengthCard({
           </div>
           <p className="mt-2 text-xs text-text-tertiary">
             {planName
-              ? `${planName} · trading desk allocation.`
-              : clamped >= 100
-                ? "Your signals plan is active. Full desk allocation is in effect."
-                : "This figure represents your current trading desk allocation."}
+              ? `${planName} plan · ${clamped.toFixed(0)}% trading desk allocation.`
+              : "This figure represents your current trading desk allocation."}
           </p>
         </div>
       </div>

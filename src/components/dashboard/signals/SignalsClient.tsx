@@ -82,10 +82,11 @@ function SignalPlanConfirmModal({
               </button>
             </div>
             <p className="mt-2 text-sm text-text-secondary">
-              {t("signals.confirmBody", {
+                {t("signals.confirmBody", {
                 amount: formatPlanPrice(plan.price),
                 name: plan.name,
                 days: plan.days,
+                pct: plan.pct,
               })}
             </p>
             {!canAfford && (
@@ -240,6 +241,7 @@ export function SignalsClient() {
                 <p className="mt-4 text-3xl font-bold tabular-nums text-text-primary">
                   {formatPlanPrice(plan.price)}
                 </p>
+                <p className="mt-1 text-sm font-semibold text-green">{plan.pct}% signal allocation</p>
                 <p className="mt-1 text-sm text-text-tertiary">{t("signals.daysAccess", { days: plan.days })}</p>
                 {owned ? (
                   <button

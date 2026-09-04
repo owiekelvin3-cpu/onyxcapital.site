@@ -5,6 +5,7 @@ export type SignalPlan = {
   name: string;
   price: number;
   days: number;
+  pct: number;
   description: string;
 };
 
@@ -14,6 +15,7 @@ export const SIGNAL_PLANS: SignalPlan[] = [
     name: "NEWBIE",
     price: 1500,
     days: 14,
+    pct: 20,
     description:
       "Basic entry-level signals with lower risk, designed for beginners learning how signals work.",
   },
@@ -22,6 +24,7 @@ export const SIGNAL_PLANS: SignalPlan[] = [
     name: "BRONZE",
     price: 2000,
     days: 21,
+    pct: 40,
     description:
       "Low to moderate confidence signals, suitable for cautious traders building consistency.",
   },
@@ -30,6 +33,7 @@ export const SIGNAL_PLANS: SignalPlan[] = [
     name: "SILVER",
     price: 3000,
     days: 100,
+    pct: 60,
     description: "Well-researched signals with solid setups and balanced risk-to-reward.",
   },
   {
@@ -37,6 +41,7 @@ export const SIGNAL_PLANS: SignalPlan[] = [
     name: "GOLD",
     price: 3500,
     days: 165,
+    pct: 80,
     description:
       "High-confidence signals backed by strong market confluence and clear confirmations.",
   },
@@ -45,6 +50,7 @@ export const SIGNAL_PLANS: SignalPlan[] = [
     name: "PLATINUM",
     price: 5000,
     days: 365,
+    pct: 100,
     description:
       "Premium, top-tier signals with the highest conviction, precision entries, and optimal risk management.",
   },
@@ -76,6 +82,19 @@ export function signalTierRank(tier: string | null | undefined): number {
 
 export function signalPlanById(id: string) {
   return SIGNAL_PLANS.find((p) => p.id === id);
+}
+
+export function signalPlanPct(tier: string | null | undefined): number {
+  if (!tier) return 0;
+  const plan = SIGNAL_PLANS.find((p) => p.id === tier.toLowerCase());
+  if (plan) return plan.pct;
+  const rank = signalTierRank(tier);
+  if (rank >= 5) return 100;
+  if (rank === 4) return 80;
+  if (rank === 3) return 60;
+  if (rank === 2) return 40;
+  if (rank === 1) return 20;
+  return 0;
 }
 
 export function signalTierLabel(tier: string) {

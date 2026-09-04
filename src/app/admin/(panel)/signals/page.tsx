@@ -29,7 +29,8 @@ type UserRow = {
 type TabId = "allocation" | "desk";
 
 const BULK_STEPS = [-10, -5, -1, 1, 5, 10] as const;
-const QUICK_PCTS = [0, 25, 50, 75, 100] as const;
+const USER_NUDGES = [-5, -1, 1, 5] as const;
+const QUICK_PCTS = [0, 20, 40, 60, 80, 100] as const;
 
 export default function AdminSignalsPage() {
   const [tab, setTab] = useState<TabId>("allocation");
@@ -143,6 +144,25 @@ export default function AdminSignalsPage() {
     }
   }
 
+  async function nudgeUserPct(user: UserRow, delta: number) {
+    const next = Math.min(100, Math.max(0, Math.round((user.signal_pct ?? 0) + delta)));
+    setSavingUserId(user.id);
+    setError("");
+    setSuccess("");
+    try {
+      await setAdminUserSignalPct({ userId: user.id, pct: next });
+      flash(`Set ${user.email} to ${next}%.`);
+      setUsers((prev) =>
+        prev.map((u) => (u.id === user.id ? { ...u, signal_pct: next } : u))
+      );
+      setDraftForUser(user.id, String(next));
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Could not update user.");
+    } finally {
+      setSavingUserId(null);
+    }
+  }
+
   async function grantPackage() {
     if (!grantUserId) {
       setError("Select a user for package access.");
@@ -162,7 +182,8 @@ export default function AdminSignalsPage() {
         packageName: plan.name,
         durationDays: Number.isFinite(days) ? days : 30,
       });
-      flash(`Granted ${plan.name} to ${user?.email ?? "user"}.`);
+      flash(`Granted ${plan.name} (${plan.pct}%) to ${user?.email ?? "user"}.`);
+      await load();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Grant failed.");
     } finally {
@@ -378,6 +399,19 @@ export default function AdminSignalsPage() {
                             </p>
                           </div>
                         </div>
+                        <div className="flex flex-wrap gap-1">
+                          {USER_NUDGES.map((step) => (
+                            <button
+                              key={step}
+                              type="button"
+                              disabled={saving || busy}
+                              onClick={() => void nudgeUserPct(u, step)}
+                              className="rounded border border-border px-2 py-1 text-[11px] font-medium text-text-secondary hover:bg-bg-hover disabled:opacity-50"
+                            >
+                              {step > 0 ? `+${step}` : step}
+                            </button>
+                          ))}
+                        </div>
                         <div className="flex items-center gap-2">
                           <input
                             type="number"
@@ -426,6 +460,7 @@ export default function AdminSignalsPage() {
                     <tr className="border-b border-border bg-bg-secondary/60 text-[11px] uppercase tracking-wide text-text-tertiary">
                       <th className="px-4 py-3 font-medium">User</th>
                       <th className="px-4 py-3 font-medium">Current</th>
+                      <th className="px-4 py-3 font-medium">Adjust</th>
                       <th className="px-4 py-3 font-medium">New %</th>
                       <th className="px-4 py-3 font-medium">Quick set</th>
                       <th className="px-4 py-3 font-medium" />
@@ -452,6 +487,21 @@ export default function AdminSignalsPage() {
                               {formatPercent(u.signal_pct ?? 0)}
                             </p>
                             <p className="text-[10px] text-text-tertiary">{strength.label}</p>
+                          </td>
+                          <td className="px-4 py-3">
+                            <div className="flex flex-wrap gap-1">
+                              {USER_NUDGES.map((step) => (
+                                <button
+                                  key={step}
+                                  type="button"
+                                  disabled={saving || busy}
+                                  onClick={() => void nudgeUserPct(u, step)}
+                                  className="rounded border border-border px-1.5 py-0.5 text-[10px] font-medium text-text-secondary hover:bg-bg-hover disabled:opacity-50"
+                                >
+                                  {step > 0 ? `+${step}` : step}
+                                </button>
+                              ))}
+                            </div>
                           </td>
                           <td className="px-4 py-3">
                             <div className="flex items-center gap-2">
@@ -600,7 +650,7 @@ export default function AdminSignalsPage() {
                 >
                   {SIGNAL_PLANS.map((p) => (
                     <option key={p.id} value={p.id}>
-                      {p.name}
+                      {p.name} · {p.pct}%
                     </option>
                   ))}
                 </select>

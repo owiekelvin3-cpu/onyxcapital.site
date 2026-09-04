@@ -36,7 +36,7 @@ type Props = {
   chartData: ChartPoint[];
   recentTrades: TradeRow[];
   marketPairs: MarketPair[];
-  signalPlanId?: string | null;
+  signalPct?: number;
   signalPlanName?: string | null;
   signalExpiresAt?: string | null;
 };
@@ -244,9 +244,8 @@ export function DeckoDashboardOverview({
   chartData: _chartData,
   recentTrades: _recentTrades,
   marketPairs: _marketPairs,
-  signalPlanId,
+  signalPct = 0,
   signalPlanName,
-  signalExpiresAt,
 }: Props) {
   const firstName = displayName.split(" ")[0] || displayName || "Trader";
   const initial = (displayName || userEmail || "U").charAt(0).toUpperCase();
@@ -336,21 +335,12 @@ export function DeckoDashboardOverview({
 
       {/* Signal — mobile, compact placement */}
       <div className="lg:hidden">
-        <SignalStrengthCard
-          planId={signalPlanId}
-          planName={signalPlanName}
-          expiresAt={signalExpiresAt}
-          compact
-        />
+        <SignalStrengthCard signalPct={signalPct} planName={signalPlanName} compact />
       </div>
 
       <div className="hidden gap-3.5 sm:gap-4 xl:grid xl:grid-cols-2">
         <DeckoStaggerItem>
-          <SignalStrengthCard
-            planId={signalPlanId}
-            planName={signalPlanName}
-            expiresAt={signalExpiresAt}
-          />
+          <SignalStrengthCard signalPct={signalPct} planName={signalPlanName} />
         </DeckoStaggerItem>
 
         <DeckoStaggerItem>

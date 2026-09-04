@@ -15,7 +15,7 @@ type Props = {
   chartData: ChartPoint[];
   recentTrades: TradeRow[];
   marketPairs: MarketPair[];
-  signalPlanId?: string | null;
+  signalPct?: number;
   signalPlanName?: string | null;
   signalExpiresAt?: string | null;
 };

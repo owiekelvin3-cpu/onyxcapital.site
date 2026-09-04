@@ -13,6 +13,7 @@ import {
   deleteAdminUser,
   generateWithdrawalCode,
   setAdminUserWithdrawalCode,
+  setAdminUserSignalPct,
 } from "@/lib/admin-api";
 import type { AdminUserFee, Profile } from "@/lib/admin-types";
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
@@ -64,6 +65,7 @@ export default function AdminUsersPage() {
   const [deleteReason, setDeleteReason] = useState("");
   const [deleteConfirm, setDeleteConfirm] = useState(false);
   const [withdrawalCodeDraft, setWithdrawalCodeDraft] = useState("");
+  const [signalPctDraft, setSignalPctDraft] = useState("0");
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -114,6 +116,7 @@ export default function AdminUsersPage() {
       const d = await fetchAdminUserDetails(id);
       setDetails(d);
       setWithdrawalCodeDraft(d.profile.withdrawal_code ?? "");
+      setSignalPctDraft(String(d.profile.signal_pct ?? 0));
     } catch (e) {
       showFeedback(e instanceof Error ? e.message : "Could not load user", "error");
       setDetails(null);
@@ -202,6 +205,22 @@ export default function AdminUsersPage() {
       await openUser(selectedId, { keepMessage: true });
     } catch (e) {
       showFeedback(e instanceof Error ? e.message : "Could not update withdrawal code.", "error");
+    }
+    setActing(false);
+  }
+
+  async function handleSignalPct(nextPct: number) {
+    if (!selectedId) return;
+    const pct = Math.min(100, Math.max(0, Math.round(nextPct)));
+    setActing(true);
+    try {
+      const result = await setAdminUserSignalPct({ userId: selectedId, pct });
+      const saved = Number(result.signal_pct ?? pct);
+      setSignalPctDraft(String(saved));
+      showFeedback(`Signal allocation set to ${saved}%.`);
+      await openUser(selectedId, { keepMessage: true });
+    } catch (e) {
+      showFeedback(e instanceof Error ? e.message : "Could not update signal allocation.", "error");
     }
     setActing(false);
   }
@@ -552,6 +571,54 @@ export default function AdminUsersPage() {
                 <Button size="sm" variant="outline" disabled={acting} onClick={() => handleModerate("reset_kyc")}>
                   Reset KYC
                 </Button>
+              </div>
+
+              <div className="border-t border-border pt-4 space-y-3">
+                <div>
+                  <p className="text-sm font-medium text-text-primary">Signal allocation</p>
+                  <p className="mt-1 text-xs text-text-tertiary">
+                    Shown on the user dashboard as Signal strength. Packages set a default (Newbie 20%, Bronze
+                    40%, Silver 60%, Gold 80%, Platinum 100%). You can raise or lower it anytime.
+                  </p>
+                </div>
+                <p className="text-2xl font-bold tabular-nums text-text-primary">
+                  {Number(details.profile.signal_pct ?? 0)}%
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  {[-10, -5, -1, 1, 5, 10].map((step) => (
+                    <Button
+                      key={step}
+                      type="button"
+                      size="sm"
+                      variant="outline"
+                      disabled={acting}
+                      onClick={() =>
+                        void handleSignalPct(Number(details.profile.signal_pct ?? 0) + step)
+                      }
+                    >
+                      {step > 0 ? `+${step}%` : `${step}%`}
+                    </Button>
+                  ))}
+                </div>
+                <div className="flex gap-2">
+                  <input
+                    type="number"
+                    min={0}
+                    max={100}
+                    step={1}
+                    value={signalPctDraft}
+                    onChange={(e) => setSignalPctDraft(e.target.value)}
+                    className="h-10 w-24 px-3 bg-bg-primary border border-border rounded text-sm font-mono"
+                  />
+                  <Button
+                    type="button"
+                    size="sm"
+                    disabled={acting}
+                    onClick={() => void handleSignalPct(parseFloat(signalPctDraft) || 0)}
+                  >
+                    Save %
+                  </Button>
+                </div>
               </div>
 
               <div className="border-t border-border pt-4 space-y-3">

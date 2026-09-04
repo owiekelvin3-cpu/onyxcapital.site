@@ -1052,6 +1052,8 @@
     "startConversation": "Start a conversation",
     "startHint": "Tell us briefly what you need help with.",
     "newConversation": "New chat",
+    "liveChat": "Live chat",
+    "liveChatHint": "Message our team instantly in the chat bubble.",
     "searchConversations": "Search conversations…",
     "noConversations": "No matching conversations.",
     "noMessagesYet": "No messages yet",

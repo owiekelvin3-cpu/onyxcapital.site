@@ -8,6 +8,7 @@ import { I18nProvider } from "@/components/i18n/I18nProvider";
 import { ThemeProvider } from "@/components/theme/ThemeProvider";
 import { ThemeScript } from "@/components/theme/ThemeScript";
 import { PwaProvider } from "@/components/pwa/PwaProvider";
+import { SmartsuppChat } from "@/components/smartsupp/SmartsuppChat";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -120,7 +121,10 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       <body className="min-h-dvh w-full antialiased bg-bg-primary text-text-primary">
         <ThemeProvider>
           <PwaProvider>
-            <I18nProvider>{children}</I18nProvider>
+            <I18nProvider>
+              {children}
+              <SmartsuppChat />
+            </I18nProvider>
           </PwaProvider>
         </ThemeProvider>
       </body>

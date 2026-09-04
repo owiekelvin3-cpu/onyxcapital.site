@@ -303,6 +303,43 @@ export function WithdrawalMethodPicker({
   );
 }
 
+export function WithdrawalCodeField({
+  value,
+  onChange,
+  hasCode,
+}: {
+  value: string;
+  onChange: (value: string) => void;
+  hasCode: boolean;
+}) {
+  return (
+    <div className="space-y-2">
+      <Input
+        id="withdrawal-code"
+        label="Withdrawal Code *"
+        placeholder="Enter your unique withdrawal code"
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        autoComplete="off"
+        spellCheck={false}
+        className="font-mono tracking-wide uppercase"
+      />
+      {!hasCode && (
+        <p className="flex items-start gap-2 text-xs leading-relaxed text-amber-600 dark:text-amber-300">
+          <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+          <span>
+            No active withdrawal code. Please{" "}
+            <Link href="/dashboard/support" className="font-semibold underline-offset-2 hover:underline">
+              contact support
+            </Link>{" "}
+            to request one.
+          </span>
+        </p>
+      )}
+    </div>
+  );
+}
+
 export function WithdrawalAmountField({
   balance,
   amount,

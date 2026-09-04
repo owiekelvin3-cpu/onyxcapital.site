@@ -90,6 +90,7 @@ export type WithdrawalEligibility = {
   suspension_reason?: string | null;
   kyc_status?: string;
   kyc_approved?: boolean;
+  has_withdrawal_code?: boolean;
 };
 
 export type ProfileRow = {

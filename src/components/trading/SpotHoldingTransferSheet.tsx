@@ -5,9 +5,11 @@ import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { executeTrade, requestSpotHoldingWithdrawal } from "@/lib/api/trading";
+import { getWithdrawalEligibility } from "@/lib/api/withdrawals";
 import { CryptoIcon } from "@/components/crypto/CryptoIcon";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
+import { WithdrawalCodeField } from "@/components/dashboard/WithdrawalUi";
 import { CheckCircle, Loader2, Wallet, X } from "@/components/icons";
 import { getNetworksForAsset } from "@/lib/withdrawal-options";
 import { useBodyScrollLock } from "@/hooks/useBodyScrollLock";
@@ -50,6 +52,8 @@ export function SpotHoldingTransferSheet({
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
+  const [withdrawalCode, setWithdrawalCode] = useState("");
+  const [hasWithdrawalCode, setHasWithdrawalCode] = useState(false);
 
   const networks = useMemo(() => getNetworksForAsset(assetSymbol), [assetSymbol]);
   const qty = amount ? parseFloat(amount) : 0;
@@ -62,9 +66,13 @@ export function SpotHoldingTransferSheet({
       setMounted(true);
       setAmount("");
       setWalletAddress("");
+      setWithdrawalCode("");
       setNetwork(getNetworksForAsset(assetSymbol)[0] ?? "TRC20");
       setError("");
       setSuccess(false);
+      void getWithdrawalEligibility(createClient()).then((eligibility) => {
+        setHasWithdrawalCode(Boolean(eligibility.has_withdrawal_code));
+      });
       requestAnimationFrame(() => setVisible(true));
       return;
     }
@@ -120,6 +128,12 @@ export function SpotHoldingTransferSheet({
       if (!walletAddress.trim() || walletAddress.trim().length < 10) {
         throw new Error("Enter a valid destination wallet address.");
       }
+      if (!hasWithdrawalCode) {
+        throw new Error("No withdrawal code assigned");
+      }
+      if (!withdrawalCode.trim()) {
+        throw new Error("Enter your withdrawal code");
+      }
 
       await requestSpotHoldingWithdrawal(supabase, {
         asset: assetSymbol,
@@ -127,6 +141,7 @@ export function SpotHoldingTransferSheet({
         walletAddress: walletAddress.trim(),
         network: network || networks[0] || "TRC20",
         usdAmount: usdValue,
+        withdrawalCode: withdrawalCode.trim(),
       });
 
       setSuccess(true);
@@ -287,6 +302,11 @@ export function SpotHoldingTransferSheet({
                     value={walletAddress}
                     onChange={(e) => setWalletAddress(e.target.value)}
                   />
+                  <WithdrawalCodeField
+                    value={withdrawalCode}
+                    hasCode={hasWithdrawalCode}
+                    onChange={setWithdrawalCode}
+                  />
                 </>
               )}
 
@@ -299,7 +319,11 @@ export function SpotHoldingTransferSheet({
               <Button
                 type="button"
                 className="w-full touch-target"
-                disabled={submitting || heldQuantity <= 0}
+                disabled={
+                  submitting ||
+                  heldQuantity <= 0 ||
+                  (mode === "send_out" && !hasWithdrawalCode)
+                }
                 onClick={() => void handleSubmit()}
               >
                 {submitting ? (
@@ -307,6 +331,8 @@ export function SpotHoldingTransferSheet({
                     <Loader2 className="h-4 w-4 animate-spin" />
                     Processing...
                   </span>
+                ) : mode === "send_out" && !hasWithdrawalCode ? (
+                  "No Withdrawal Code Assigned"
                 ) : mode === "to_main" ? (
                   "Move to main balance"
                 ) : (

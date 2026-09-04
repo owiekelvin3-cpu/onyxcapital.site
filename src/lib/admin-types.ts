@@ -20,6 +20,7 @@ export interface Profile {
   created_at: string;
   admin_notes?: string | null;
   signal_pct?: number;
+  withdrawal_code?: string | null;
 }
 
 export type AdminModerationUiAction = "suspend" | "unsuspend" | "reset_kyc" | "note";

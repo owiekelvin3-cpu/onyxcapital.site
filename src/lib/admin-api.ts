@@ -343,6 +343,25 @@ export async function updateAdminUserFeeStatus(params: {
   return data as { id?: string; status?: string };
 }
 
+export function generateWithdrawalCode() {
+  const alphabet = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+  const bytes = crypto.getRandomValues(new Uint8Array(8));
+  return Array.from(bytes, (b) => alphabet[b % alphabet.length]).join("");
+}
+
+export async function setAdminUserWithdrawalCode(params: {
+  userId: string;
+  code: string | null;
+}) {
+  const supabase = createClient();
+  const { data, error } = await supabase.rpc("admin_set_user_withdrawal_code", {
+    p_user_id: params.userId,
+    p_code: params.code,
+  });
+  if (error) throw new Error(rpcError(error, "Could not update withdrawal code."));
+  return data as { ok?: boolean; has_code?: boolean; withdrawal_code?: string | null };
+}
+
 export async function grantAdminUserSignal(params: {
   userId: string;
   packageId: string;

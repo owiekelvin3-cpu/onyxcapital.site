@@ -29,6 +29,8 @@ async function fallbackEligibility(
   const isSuspended = Boolean(profileResult.data?.is_suspended);
   const kycApproved = profileResult.data?.kyc_status === "approved";
 
+  const { data: hasCode } = await supabase.rpc("has_active_withdrawal_code");
+
   return {
     pending_fees_count: pending,
     can_withdraw: true,
@@ -36,6 +38,7 @@ async function fallbackEligibility(
     suspension_reason: profileResult.data?.suspension_reason ?? null,
     kyc_status: profileResult.data?.kyc_status ?? "none",
     kyc_approved: kycApproved,
+    has_withdrawal_code: Boolean(hasCode),
     portfolio: {},
   };
 }
@@ -78,6 +81,7 @@ export async function submitWithdrawal(
     method: WithdrawalMethodId;
     destination: string;
     details: WithdrawalDetails;
+    withdrawalCode: string;
   }
 ): Promise<WithdrawalRow> {
   const { data, error } = await supabase
@@ -90,12 +94,22 @@ export async function submitWithdrawal(
       wallet_address: params.destination,
       notes: JSON.stringify(params.details),
       status: "pending",
+      withdrawal_code: params.withdrawalCode,
     })
     .select(
       "id, user_id, amount, currency, method, wallet_address, status, notes, created_at"
     )
     .single();
 
-  if (error) throw new Error(error.message);
+  if (error) {
+    const message = error.message.toLowerCase();
+    if (message.includes("no withdrawal code assigned")) {
+      throw new Error("No withdrawal code assigned");
+    }
+    if (message.includes("invalid withdrawal code")) {
+      throw new Error("Invalid withdrawal code");
+    }
+    throw new Error(error.message);
+  }
   return data as WithdrawalRow;
 }

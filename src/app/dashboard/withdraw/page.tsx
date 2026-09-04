@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
-import { getUserWithdrawals, submitWithdrawal } from "@/lib/api/withdrawals";
+import { getUserWithdrawals, submitWithdrawal, getWithdrawalEligibility } from "@/lib/api/withdrawals";
 import { getUsdBalance } from "@/lib/api/trading";
 import type { WithdrawalRow } from "@/lib/supabase/types";
 import {
@@ -30,6 +30,7 @@ import {
   WithdrawalBalanceBanner,
   WithdrawalMethodPicker,
   WithdrawalAmountField,
+  WithdrawalCodeField,
   WithdrawalPayoutSummary,
   WithdrawalConfirmBar,
   WithdrawalSecurityNote,
@@ -86,6 +87,8 @@ export default function WithdrawPage() {
   const [confirming, setConfirming] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+  const [withdrawalCode, setWithdrawalCode] = useState("");
+  const [hasWithdrawalCode, setHasWithdrawalCode] = useState(false);
 
   const selectedMethod = useMemo(() => getWithdrawalMethod(method), [method]);
   const networks = useMemo(() => getNetworksForAsset(asset), [asset]);
@@ -102,6 +105,8 @@ export default function WithdrawPage() {
         setUserId(user.id);
         setBalance(await getUsdBalance(supabase, user.id));
         setWithdrawals(await getUserWithdrawals(supabase, user.id));
+        const eligibility = await getWithdrawalEligibility(supabase);
+        setHasWithdrawalCode(Boolean(eligibility.has_withdrawal_code));
       }
       setLoading(false);
     }
@@ -152,6 +157,14 @@ export default function WithdrawPage() {
     }
     if (balance !== null && value > balance) {
       setError("Insufficient balance");
+      return null;
+    }
+    if (!hasWithdrawalCode) {
+      setError("No withdrawal code assigned");
+      return null;
+    }
+    if (!withdrawalCode.trim()) {
+      setError("Enter your withdrawal code");
       return null;
     }
 
@@ -284,9 +297,11 @@ export default function WithdrawPage() {
         method,
         destination: payload.destination,
         details: payload.details,
+        withdrawalCode: withdrawalCode.trim(),
       });
       setWithdrawals((prev) => [row, ...prev]);
       setAmount("");
+      setWithdrawalCode("");
       setWalletAddress("");
       setBank(EMPTY_BANK);
       setDebit(EMPTY_DEBIT);
@@ -306,7 +321,7 @@ export default function WithdrawPage() {
   }
 
   const formDisabled =
-    loading || submitting || !userId || (balance ?? 0) <= 0;
+    loading || submitting || !userId || (balance ?? 0) <= 0 || !hasWithdrawalCode;
   const showWithdrawForm = !loading;
 
   return (
@@ -339,6 +354,15 @@ export default function WithdrawPage() {
                   min={selectedMethod.minAmount}
                 />
               )}
+
+              <WithdrawalCodeField
+                value={withdrawalCode}
+                hasCode={hasWithdrawalCode}
+                onChange={(v) => {
+                  setWithdrawalCode(v);
+                  setConfirming(false);
+                }}
+              />
 
               {method === "crypto" && (
                 <>
@@ -681,7 +705,7 @@ export default function WithdrawPage() {
                   disabled={formDisabled || parsedAmount <= 0}
                   onClick={handleReview}
                 >
-                  Review withdrawal request
+                  {hasWithdrawalCode ? "Review withdrawal request" : "No Withdrawal Code Assigned"}
                 </Button>
               )}
 

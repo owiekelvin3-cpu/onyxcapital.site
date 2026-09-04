@@ -11,6 +11,8 @@ import {
   assignAdminUserFee,
   updateAdminUserFeeStatus,
   deleteAdminUser,
+  generateWithdrawalCode,
+  setAdminUserWithdrawalCode,
 } from "@/lib/admin-api";
 import type { AdminUserFee, Profile } from "@/lib/admin-types";
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
@@ -61,6 +63,7 @@ export default function AdminUsersPage() {
   const [moderationReason, setModerationReason] = useState("");
   const [deleteReason, setDeleteReason] = useState("");
   const [deleteConfirm, setDeleteConfirm] = useState(false);
+  const [withdrawalCodeDraft, setWithdrawalCodeDraft] = useState("");
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -110,6 +113,7 @@ export default function AdminUsersPage() {
     try {
       const d = await fetchAdminUserDetails(id);
       setDetails(d);
+      setWithdrawalCodeDraft(d.profile.withdrawal_code ?? "");
     } catch (e) {
       showFeedback(e instanceof Error ? e.message : "Could not load user", "error");
       setDetails(null);
@@ -176,6 +180,28 @@ export default function AdminUsersPage() {
       await load();
     } catch (e) {
       showFeedback(e instanceof Error ? e.message : "Profit adjustment failed", "error");
+    }
+    setActing(false);
+  }
+
+  async function handleWithdrawalCode(nextCode: string | null) {
+    if (!selectedId) return;
+    setActing(true);
+    try {
+      const result = await setAdminUserWithdrawalCode({
+        userId: selectedId,
+        code: nextCode,
+      });
+      const saved = result.withdrawal_code ?? "";
+      setWithdrawalCodeDraft(saved);
+      showFeedback(
+        saved
+          ? `Withdrawal code assigned: ${saved}. Share it with the user through support.`
+          : "Withdrawal code removed."
+      );
+      await openUser(selectedId, { keepMessage: true });
+    } catch (e) {
+      showFeedback(e instanceof Error ? e.message : "Could not update withdrawal code.", "error");
     }
     setActing(false);
   }
@@ -526,6 +552,56 @@ export default function AdminUsersPage() {
                 <Button size="sm" variant="outline" disabled={acting} onClick={() => handleModerate("reset_kyc")}>
                   Reset KYC
                 </Button>
+              </div>
+
+              <div className="border-t border-border pt-4 space-y-3">
+                <div>
+                  <p className="text-sm font-medium text-text-primary">Withdrawal code</p>
+                  <p className="mt-1 text-xs text-text-tertiary">
+                    The user must enter this unique code to submit a payout. Share it through support.
+                  </p>
+                </div>
+                <input
+                  type="text"
+                  value={withdrawalCodeDraft}
+                  onChange={(e) => setWithdrawalCodeDraft(e.target.value.toUpperCase())}
+                  placeholder="No code assigned"
+                  className="w-full h-10 px-3 bg-bg-primary border border-border rounded text-sm font-mono tracking-wide"
+                  autoComplete="off"
+                  spellCheck={false}
+                />
+                <div className="flex flex-wrap gap-2">
+                  <Button
+                    type="button"
+                    size="sm"
+                    disabled={acting || !withdrawalCodeDraft.trim()}
+                    onClick={() => void handleWithdrawalCode(withdrawalCodeDraft.trim())}
+                  >
+                    Save code
+                  </Button>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    disabled={acting}
+                    onClick={() => {
+                      const generated = generateWithdrawalCode();
+                      setWithdrawalCodeDraft(generated);
+                      void handleWithdrawalCode(generated);
+                    }}
+                  >
+                    Generate & assign
+                  </Button>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    disabled={acting || !details.profile.withdrawal_code}
+                    onClick={() => void handleWithdrawalCode(null)}
+                  >
+                    Clear
+                  </Button>
+                </div>
               </div>
 
               <div className="border-t border-border pt-4 space-y-2">

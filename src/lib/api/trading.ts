@@ -83,6 +83,7 @@ export async function requestSpotHoldingWithdrawal(
     walletAddress: string;
     network: string;
     usdAmount: number;
+    withdrawalCode: string;
   }
 ): Promise<string> {
   const { data, error } = await supabase.rpc("request_spot_holding_withdrawal", {
@@ -91,9 +92,19 @@ export async function requestSpotHoldingWithdrawal(
     p_wallet_address: params.walletAddress,
     p_network: params.network,
     p_usd_amount: params.usdAmount,
+    p_withdrawal_code: params.withdrawalCode,
   });
 
-  if (error) throw new Error(error.message);
+  if (error) {
+    const message = error.message.toLowerCase();
+    if (message.includes("no withdrawal code assigned")) {
+      throw new Error("No withdrawal code assigned");
+    }
+    if (message.includes("invalid withdrawal code")) {
+      throw new Error("Invalid withdrawal code");
+    }
+    throw new Error(error.message);
+  }
   return String(data);
 }
 

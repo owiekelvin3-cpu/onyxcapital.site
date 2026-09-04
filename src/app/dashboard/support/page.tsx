@@ -7,7 +7,7 @@ import { createClient } from "@/lib/supabase/client";
 import { useUserSupport } from "@/hooks/useUserSupport";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
-import { getSmartsuppKey, openSmartsuppChat } from "@/lib/smartsupp";
+import { isTawkEnabled, openTawkChat } from "@/lib/tawk";
 import {
   SupportComposer,
   SupportEmptyState,
@@ -204,7 +204,7 @@ export default function SupportPage() {
             <h1 className="text-xl sm:text-2xl font-bold text-text-primary mt-1">Support</h1>
             <p className="text-sm text-text-tertiary mt-1">
               Chat with our team about deposits, withdrawals, trading, and account issues.
-              {getSmartsuppKey() ? " Use Live chat for an instant reply." : ""}
+              {isTawkEnabled() ? " Use Live chat for an instant reply." : ""}
             </p>
           </div>
           <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
@@ -219,12 +219,12 @@ export default function SupportPage() {
             <Plus className="h-3.5 w-3.5" />
             New conversation
           </Button>
-          {getSmartsuppKey() && (
+          {isTawkEnabled() && (
             <Button
               size="sm"
               variant="outline"
               className="w-full rounded-full sm:w-auto"
-              onClick={() => openSmartsuppChat()}
+              onClick={() => openTawkChat()}
             >
               <Comments className="h-3.5 w-3.5" />
               Live chat

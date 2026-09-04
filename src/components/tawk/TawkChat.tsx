@@ -4,14 +4,13 @@ import { useEffect } from "react";
 import { usePathname } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { hasSupabaseEnv } from "@/lib/env";
-import { getSmartsuppKey, syncSmartsuppWidget } from "@/lib/smartsupp";
+import { isTawkEnabled, syncTawkWidget } from "@/lib/tawk";
 
-export function SmartsuppChat() {
+export function TawkChat() {
   const pathname = usePathname() || "/";
-  const key = getSmartsuppKey();
 
   useEffect(() => {
-    if (!key) return;
+    if (!isTawkEnabled()) return;
 
     const hidden = pathname.startsWith("/admin");
     const onDashboard =
@@ -43,14 +42,14 @@ export function SmartsuppChat() {
       }
 
       if (cancelled) return;
-      syncSmartsuppWidget({ key, hidden, offsetY, name, email, userId });
+      syncTawkWidget({ hidden, offsetY, name, email, userId });
     }
 
     void sync();
     return () => {
       cancelled = true;
     };
-  }, [key, pathname]);
+  }, [pathname]);
 
   return null;
 }

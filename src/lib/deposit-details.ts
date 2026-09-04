@@ -8,7 +8,14 @@ export type GiftCardDepositMeta = {
   backImageUrl?: string | null;
 };
 
-export type ParsedDepositNotes = GiftCardDepositMeta | { type: "plain"; text?: string };
+export type PlainDepositMeta = {
+  type: "plain";
+  text?: string;
+  proofImageUrl?: string;
+  txHash?: string;
+};
+
+export type ParsedDepositNotes = GiftCardDepositMeta | PlainDepositMeta;
 
 export function parseDepositNotes(notes: string | null, method: string): ParsedDepositNotes {
   if (!notes) {
@@ -27,6 +34,21 @@ export function parseDepositNotes(notes: string | null, method: string): ParsedD
           backImageUrl: typeof data.backImageUrl === "string" ? data.backImageUrl : null,
         };
       }
+
+      const text =
+        typeof data.text === "string"
+          ? data.text
+          : typeof data.label === "string"
+            ? data.spot_wallet_deposit
+              ? `Spot wallet deposit · ${data.label}`
+              : data.label
+            : undefined;
+      const proofImageUrl = typeof data.proofImageUrl === "string" ? data.proofImageUrl : undefined;
+      const txHash = typeof data.txHash === "string" ? data.txHash : undefined;
+
+      if (text || proofImageUrl || txHash) {
+        return { type: "plain", text, proofImageUrl, txHash };
+      }
     } catch {
       /* fall through */
     }
@@ -37,6 +59,11 @@ export function parseDepositNotes(notes: string | null, method: string): ParsedD
   }
 
   return { type: "plain", text: notes };
+}
+
+export function depositNotesHaveImages(meta: ParsedDepositNotes): boolean {
+  if (meta.type === "gift_card") return Boolean(meta.frontImageUrl || meta.backImageUrl);
+  return Boolean(meta.proofImageUrl);
 }
 
 export function getGiftCardBrandFromMethod(method: string) {

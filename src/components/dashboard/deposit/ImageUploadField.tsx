@@ -9,12 +9,14 @@ export function ImageUploadField({
   required,
   value,
   onChange,
+  hint,
 }: {
   id: string;
   label: string;
   required?: boolean;
   value: File | null;
   onChange: (file: File | null) => void;
+  hint?: string;
 }) {
   return (
     <div>
@@ -54,6 +56,7 @@ export function ImageUploadField({
         className="sr-only"
         onChange={(e) => onChange(e.target.files?.[0] ?? null)}
       />
+      {hint && <p className="mt-2 text-[11px] leading-relaxed text-text-tertiary">{hint}</p>}
     </div>
   );
 }

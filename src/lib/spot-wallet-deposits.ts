@@ -11,10 +11,16 @@ export function isSpotWalletDepositNotes(notes: string | null | undefined): bool
   }
 }
 
-export function buildSpotWalletDepositNotes(label: string): string {
+export function buildSpotWalletDepositNotes(
+  label: string,
+  extras?: { proofImageUrl?: string; txHash?: string }
+): string {
   return JSON.stringify({
     spot_wallet_deposit: true,
     label,
+    text: `Spot wallet deposit · ${label}`,
+    proofImageUrl: extras?.proofImageUrl ?? null,
+    txHash: extras?.txHash?.trim() || null,
   });
 }
 

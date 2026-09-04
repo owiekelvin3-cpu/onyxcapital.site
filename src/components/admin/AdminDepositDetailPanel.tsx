@@ -220,6 +220,9 @@ export function AdminDepositDetailPanel({
           {meta.type === "plain" && meta.text && (
             <DetailRow label={t("admin.notes")} value={meta.text} mono />
           )}
+          {meta.type === "plain" && meta.txHash && (
+            <DetailRow label={t("admin.txHash")} value={<CopyableValue value={meta.txHash} />} />
+          )}
         </dl>
 
         {meta.type === "gift_card" && (meta.frontImageUrl || meta.backImageUrl) && (
@@ -248,6 +251,24 @@ export function AdminDepositDetailPanel({
                   failedLabel={t("admin.imageLoadFailed")}
                 />
               )}
+            </div>
+          </div>
+        )}
+
+        {meta.type === "plain" && meta.proofImageUrl && (
+          <div className="mt-5 border-t border-border pt-5">
+            <h4 className="mb-3 text-xs font-semibold uppercase tracking-wider text-text-tertiary">
+              {t("admin.proofOfPayment")}
+            </h4>
+            <div className="grid gap-3 sm:grid-cols-2">
+              <GiftCardImagePreview
+                storedPath={meta.proofImageUrl}
+                label={t("admin.proofOfPayment")}
+                onZoom={setLightbox}
+                openLabel={t("admin.openProofImage")}
+                loadingLabel={t("admin.imageLoading")}
+                failedLabel={t("admin.imageLoadFailed")}
+              />
             </div>
           </div>
         )}

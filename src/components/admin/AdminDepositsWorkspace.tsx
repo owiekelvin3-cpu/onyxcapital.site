@@ -14,7 +14,7 @@ import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { formatDepositMethod } from "@/lib/deposit-options";
 import { isSpotWalletDepositNotes } from "@/lib/spot-wallet-deposits";
-import { parseDepositNotes } from "@/lib/deposit-details";
+import { depositNotesHaveImages, parseDepositNotes } from "@/lib/deposit-details";
 import { RefreshCw } from "@/components/icons";
 import { formatCurrency, formatDate, cn } from "@/lib/utils";
 
@@ -165,9 +165,7 @@ export function AdminDepositsWorkspace({
                 const userLabel = d.profiles?.full_name || d.profiles?.email || d.user_id.slice(0, 8);
                 const pending = isPending(d.status);
                 const parsedNotes = parseDepositNotes(d.notes ?? null, d.method);
-                const hasImages =
-                  parsedNotes.type === "gift_card" &&
-                  Boolean(parsedNotes.frontImageUrl || parsedNotes.backImageUrl);
+                const hasImages = depositNotesHaveImages(parsedNotes);
 
                 return (
                   <li key={d.id}>

@@ -4,7 +4,7 @@ import { createPortal } from "react-dom";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
-import { submitDeposit } from "@/lib/api/deposits";
+import { submitCryptoDeposit } from "@/lib/api/deposits";
 import { CryptoIcon } from "@/components/crypto/CryptoIcon";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
@@ -19,7 +19,7 @@ import {
   X,
 } from "@/components/icons";
 import { DEPOSIT_CRYPTO_LABELS } from "@/lib/deposit-options";
-import { buildSpotWalletDepositNotes } from "@/lib/spot-wallet-deposits";
+import { ImageUploadField } from "@/components/dashboard/deposit/ImageUploadField";
 import { useBodyScrollLock } from "@/hooks/useBodyScrollLock";
 import { cn, formatCurrency } from "@/lib/utils";
 
@@ -51,6 +51,8 @@ export function SpotCryptoDepositSheet({
   const [visible, setVisible] = useState(false);
   const [step, setStep] = useState<Step>("form");
   const [amount, setAmount] = useState("");
+  const [proofImage, setProofImage] = useState<File | null>(null);
+  const [txHash, setTxHash] = useState("");
   const [copied, setCopied] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
@@ -64,6 +66,8 @@ export function SpotCryptoDepositSheet({
       setStep("form");
       setError("");
       setCopied(false);
+      setProofImage(null);
+      setTxHash("");
       setSubmittedAmount(null);
       requestAnimationFrame(() => setVisible(true));
       return;
@@ -101,15 +105,23 @@ export function SpotCryptoDepositSheet({
       setError("Wallet address unavailable. Contact support.");
       return;
     }
+    if (!proofImage) {
+      setError("Upload a screenshot of your payment to continue.");
+      return;
+    }
 
     setSubmitting(true);
     try {
       const supabase = createClient();
-      await submitDeposit(supabase, {
+      await submitCryptoDeposit(supabase, {
         userId,
         amount: value,
         method: `crypto_${depositKey}`,
-        notes: buildSpotWalletDepositNotes(DEPOSIT_CRYPTO_LABELS[depositKey] ?? assetName),
+        summary: `Spot wallet deposit · ${DEPOSIT_CRYPTO_LABELS[depositKey] ?? assetName}`,
+        proofImage,
+        txHash,
+        spotWallet: true,
+        assetLabel: DEPOSIT_CRYPTO_LABELS[depositKey] ?? assetName,
       });
       setSubmittedAmount(value);
       setStep("reviewing");
@@ -176,8 +188,8 @@ export function SpotCryptoDepositSheet({
                   <div>
                     <p className="text-sm font-semibold text-text-primary">Send only {assetSymbol}</p>
                     <p className="mt-1 text-xs leading-relaxed text-text-tertiary">
-                      Send {assetName} to the address below. Once sent, enter the USD value and submit
-                      for review. Approved deposits are credited to your spot crypto wallet.
+                      Send {assetName} to the address below. Once sent, upload a screenshot of the
+                      payment and submit for review. Approved deposits are credited to your spot crypto wallet.
                     </p>
                   </div>
                 </div>
@@ -231,6 +243,24 @@ export function SpotCryptoDepositSheet({
                 )}
               </div>
 
+              <ImageUploadField
+                id="spot-deposit-proof"
+                label="Proof of payment"
+                required
+                value={proofImage}
+                onChange={setProofImage}
+                hint="After you send the payment, upload a screenshot of the transfer."
+              />
+
+              <Input
+                id="spot-deposit-tx"
+                label="Transaction hash (optional)"
+                placeholder="Paste your transaction ID"
+                value={txHash}
+                onChange={(e) => setTxHash(e.target.value)}
+                className="font-mono"
+              />
+
               {error && (
                 <p role="alert" className="text-sm text-red">
                   {error}
@@ -240,7 +270,7 @@ export function SpotCryptoDepositSheet({
               <Button
                 type="button"
                 className="w-full touch-target"
-                disabled={submitting || !addressReady}
+                disabled={submitting || !addressReady || !proofImage}
                 onClick={() => void handleSubmit()}
               >
                 {submitting ? (

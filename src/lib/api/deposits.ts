@@ -106,6 +106,75 @@ export async function uploadGiftCardImage(
   return path;
 }
 
+export async function uploadDepositProofImage(
+  supabase: SupabaseClient,
+  userId: string,
+  file: File
+): Promise<string> {
+  if (file.size > 8 * 1024 * 1024) {
+    throw new Error("Proof image must be 8MB or smaller.");
+  }
+  if (file.type && !file.type.startsWith("image/")) {
+    throw new Error("Please upload a JPG, PNG, or WebP screenshot.");
+  }
+
+  const ext = (file.name.split(".").pop() || "jpg").toLowerCase().replace(/[^\w]+/g, "") || "jpg";
+  const path = `${userId}/deposit-proofs/${Date.now()}-${crypto.randomUUID()}.${ext}`;
+  const { error } = await supabase.storage.from("kyc-documents").upload(path, file, {
+    contentType: file.type || "image/jpeg",
+    upsert: false,
+  });
+  if (error) throw new Error(error.message);
+  return path;
+}
+
+export function buildCryptoDepositNotes(params: {
+  summary: string;
+  proofImageUrl: string;
+  txHash?: string;
+  spotWallet?: boolean;
+  assetLabel?: string;
+}): string {
+  return JSON.stringify({
+    ...(params.spotWallet
+      ? { spot_wallet_deposit: true, label: params.assetLabel ?? params.summary }
+      : {}),
+    text: params.summary,
+    proofImageUrl: params.proofImageUrl,
+    txHash: params.txHash?.trim() || null,
+  });
+}
+
+export async function submitCryptoDeposit(
+  supabase: SupabaseClient,
+  params: {
+    userId: string;
+    amount: number;
+    method: string;
+    summary: string;
+    proofImage: File;
+    txHash?: string;
+    relatedFeeId?: string;
+    spotWallet?: boolean;
+    assetLabel?: string;
+  }
+): Promise<DepositRow> {
+  const proofImageUrl = await uploadDepositProofImage(supabase, params.userId, params.proofImage);
+  return submitDeposit(supabase, {
+    userId: params.userId,
+    amount: params.amount,
+    method: params.method,
+    notes: buildCryptoDepositNotes({
+      summary: params.summary,
+      proofImageUrl,
+      txHash: params.txHash,
+      spotWallet: params.spotWallet,
+      assetLabel: params.assetLabel,
+    }),
+    relatedFeeId: params.relatedFeeId,
+  });
+}
+
 export async function submitGiftCardDeposit(
   supabase: SupabaseClient,
   params: {

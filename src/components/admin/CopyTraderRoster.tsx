@@ -1,8 +1,9 @@
 "use client";
 
-import { useMemo, useState, type ReactNode } from "react";
+import { useMemo, useRef, useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
-import { Pencil, Plus, Trash } from "@/components/icons";
+import { Image, Loader2, Pencil, Plus, Trash, Upload } from "@/components/icons";
+import { TraderAvatar } from "@/components/dashboard/copy-trading/TraderAvatar";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { createClient } from "@/lib/supabase/client";
@@ -15,6 +16,7 @@ import {
 import {
   COPY_TRADER_SECTION_META,
   TRADER_AVATAR_KINDS,
+  isRemoteAvatarUrl,
   sectionTitle,
   slugFromName,
   type CopyTraderProfile,
@@ -109,6 +111,23 @@ export function CopyTraderRoster({
   const [showForm, setShowForm] = useState(false);
   const [busy, setBusy] = useState(false);
   const [removingId, setRemovingId] = useState<string | null>(null);
+  const [uploadingPhoto, setUploadingPhoto] = useState(false);
+  const photoInputRef = useRef<HTMLInputElement>(null);
+
+  const previewTrader: CopyTraderProfile = {
+    name: draft.name.trim() || "Trader",
+    handle: draft.handle,
+    bio: draft.bio,
+    roi: Number(draft.roi) || 0,
+    followers: Number(draft.followers) || 0,
+    winRate: Number(draft.winRate) || 0,
+    rating: Number(draft.rating) || 0,
+    avatarKind: draft.avatarKind,
+    avatarSeed: draft.avatarSeed || slugFromName(draft.name || "trader"),
+    ringColor: draft.ringColor,
+    price: Number(draft.price) || 0,
+    sectionId: draft.sectionId,
+  };
 
   const grouped = useMemo(() => {
     const map = new Map<string, CopyTraderProfile[]>();
@@ -129,12 +148,80 @@ export function CopyTraderRoster({
         if (!prev.handle || prev.handle === `@${slugFromName(prev.name)}`) {
           next.handle = `@${slug}`;
         }
-        if (!prev.avatarSeed || prev.avatarSeed === slugFromName(prev.name)) {
+        if (
+          prev.avatarKind !== "photo" &&
+          (!prev.avatarSeed || prev.avatarSeed === slugFromName(prev.name))
+        ) {
           next.avatarSeed = slug;
         }
       }
       return next;
     });
+  };
+
+  const setAvatarKind = (kind: TraderAvatarKind) => {
+    setDraft((prev) => {
+      const next = { ...prev, avatarKind: kind };
+      if (kind === "photo") {
+        if (!isRemoteAvatarUrl(prev.avatarSeed)) next.avatarSeed = "";
+      } else if (prev.avatarKind === "photo") {
+        next.avatarSeed = slugFromName(prev.name);
+      }
+      return next;
+    });
+  };
+
+  const uploadPhoto = async (file: File) => {
+    const allowed = ["image/jpeg", "image/png", "image/webp"];
+    if (!allowed.includes(file.type)) {
+      onError(t("admin.copyTradingPhotoType"));
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      onError(t("admin.copyTradingPhotoSize"));
+      return;
+    }
+
+    setUploadingPhoto(true);
+    onError("");
+    try {
+      const supabase = createClient();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (!user) throw new Error(t("admin.copyTradingPhotoUploadFailed"));
+
+      const ext = file.type === "image/png" ? "png" : file.type === "image/webp" ? "webp" : "jpg";
+      const fileName = `${crypto.randomUUID()}.${ext}`;
+      const dedicatedPath = `copy-traders/${fileName}`;
+      const userPath = `${user.id}/copy-traders/${fileName}`;
+
+      let uploadedPath = dedicatedPath;
+      const first = await supabase.storage
+        .from("avatars")
+        .upload(dedicatedPath, file, { upsert: false, contentType: file.type });
+      if (first.error) {
+        const retry = await supabase.storage
+          .from("avatars")
+          .upload(userPath, file, { upsert: false, contentType: file.type });
+        if (retry.error) throw retry.error;
+        uploadedPath = userPath;
+      }
+
+      const {
+        data: { publicUrl },
+      } = supabase.storage.from("avatars").getPublicUrl(uploadedPath);
+
+      setDraft((prev) => ({
+        ...prev,
+        avatarKind: "photo",
+        avatarSeed: `${publicUrl}?t=${Date.now()}`,
+      }));
+    } catch (err) {
+      onError(err instanceof Error ? err.message : t("admin.copyTradingPhotoUploadFailed"));
+    } finally {
+      setUploadingPhoto(false);
+    }
   };
 
   const resetForm = () => {
@@ -160,6 +247,10 @@ export function CopyTraderRoster({
       onError(t("admin.copyTradingPriceRequired"));
       return;
     }
+    if (draft.avatarKind === "photo" && !isRemoteAvatarUrl(draft.avatarSeed)) {
+      onError(t("admin.copyTradingPhotoRequired"));
+      return;
+    }
 
     setBusy(true);
     onError("");
@@ -174,10 +265,23 @@ export function CopyTraderRoster({
         winRate: Number(draft.winRate) || 0,
         rating: Number(draft.rating) || 0,
         sortOrder: Number(draft.sortOrder) || 0,
-        avatarSeed: draft.avatarSeed.trim() || slugFromName(name),
+        avatarSeed:
+          draft.avatarKind === "photo"
+            ? draft.avatarSeed.trim()
+            : draft.avatarSeed.trim() || slugFromName(name),
       };
-      if (editingId) await updateCopyTrader(supabase, editingId, payload);
-      else await createCopyTrader(supabase, payload);
+      const persist = (input: CopyTraderInput) =>
+        editingId ? updateCopyTrader(supabase, editingId, input) : createCopyTrader(supabase, input);
+      try {
+        await persist(payload);
+      } catch (err) {
+        const message = err instanceof Error ? err.message : "";
+        if (payload.avatarKind === "photo" && /avatar_kind|check constraint/i.test(message)) {
+          await persist({ ...payload, avatarKind: "illustrated" });
+        } else {
+          throw err;
+        }
+      }
       onSuccess(t("admin.copyTradingTraderSaved"));
       resetForm();
       await onChange();
@@ -315,19 +419,66 @@ export function CopyTraderRoster({
               id="copy-avatar"
               label={t("admin.copyTradingFieldAvatar")}
               value={draft.avatarKind}
-              onChange={(value) => setField("avatarKind", value as TraderAvatarKind)}
+              onChange={(value) => setAvatarKind(value as TraderAvatarKind)}
             >
               {TRADER_AVATAR_KINDS.map((kind) => (
                 <option key={kind} value={kind}>
-                  {kind}
+                  {kind === "photo" ? t("admin.copyTradingAvatarFromDevice") : kind}
                 </option>
               ))}
             </FieldSelect>
-            <Input
-              label={t("admin.copyTradingFieldSeed")}
-              value={draft.avatarSeed}
-              onChange={(e) => setField("avatarSeed", e.target.value)}
-            />
+            {draft.avatarKind === "photo" ? (
+              <div className="space-y-1.5 sm:col-span-2 lg:col-span-2">
+                <p className="block text-xs text-text-tertiary">{t("admin.copyTradingUploadPhoto")}</p>
+                <div className="flex items-center gap-3">
+                  {isRemoteAvatarUrl(draft.avatarSeed) ? (
+                    <TraderAvatar trader={previewTrader} size="lg" />
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => photoInputRef.current?.click()}
+                      disabled={uploadingPhoto}
+                      className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full border border-dashed border-border bg-bg-primary text-text-tertiary"
+                      aria-label={t("admin.copyTradingUploadPhoto")}
+                    >
+                      {uploadingPhoto ? <Loader2 className="h-5 w-5" /> : <Image className="h-5 w-5" />}
+                    </button>
+                  )}
+                  <div className="min-w-0">
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="secondary"
+                      disabled={uploadingPhoto}
+                      onClick={() => photoInputRef.current?.click()}
+                    >
+                      {uploadingPhoto ? <Loader2 className="h-3.5 w-3.5" /> : <Upload className="h-3.5 w-3.5" />}
+                      {isRemoteAvatarUrl(draft.avatarSeed)
+                        ? t("admin.copyTradingChangePhoto")
+                        : t("admin.copyTradingUploadPhoto")}
+                    </Button>
+                    <p className="mt-1 text-xs text-text-tertiary">{t("admin.copyTradingPhotoHint")}</p>
+                  </div>
+                  <input
+                    ref={photoInputRef}
+                    type="file"
+                    accept="image/jpeg,image/png,image/webp"
+                    className="hidden"
+                    onChange={(event) => {
+                      const file = event.target.files?.[0];
+                      if (file) void uploadPhoto(file);
+                      event.target.value = "";
+                    }}
+                  />
+                </div>
+              </div>
+            ) : (
+              <Input
+                label={t("admin.copyTradingFieldSeed")}
+                value={draft.avatarSeed}
+                onChange={(e) => setField("avatarSeed", e.target.value)}
+              />
+            )}
             <Input
               label={t("admin.copyTradingFieldColor")}
               value={draft.ringColor}
@@ -361,7 +512,7 @@ export function CopyTraderRoster({
               <Button type="button" variant="secondary" size="sm" onClick={resetForm} disabled={busy}>
                 {t("admin.copyTradingCancelEdit")}
               </Button>
-              <Button type="button" size="sm" onClick={() => void save()} disabled={busy}>
+              <Button type="button" size="sm" onClick={() => void save()} disabled={busy || uploadingPhoto}>
                 {editingId ? t("admin.copyTradingEditTrader") : t("admin.copyTradingAddTrader")}
               </Button>
             </div>
@@ -386,17 +537,20 @@ export function CopyTraderRoster({
                     key={trader.id ?? trader.name}
                     className="flex flex-col gap-2 px-4 py-3 sm:flex-row sm:items-center sm:justify-between"
                   >
-                    <div className="min-w-0">
-                      <div className="flex flex-wrap items-center gap-2">
-                        <p className="font-medium text-text-primary">{trader.name}</p>
-                        <span className="text-xs text-text-tertiary">{trader.handle}</span>
-                        {!trader.isActive && (
-                          <span className="rounded-full bg-bg-tertiary px-2 py-0.5 text-[10px] font-semibold uppercase text-text-tertiary">
-                            Hidden
-                          </span>
-                        )}
+                    <div className="flex min-w-0 items-center gap-3">
+                      <TraderAvatar trader={trader} size="sm" />
+                      <div className="min-w-0">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <p className="font-medium text-text-primary">{trader.name}</p>
+                          <span className="text-xs text-text-tertiary">{trader.handle}</span>
+                          {!trader.isActive && (
+                            <span className="rounded-full bg-bg-tertiary px-2 py-0.5 text-[10px] font-semibold uppercase text-text-tertiary">
+                              Hidden
+                            </span>
+                          )}
+                        </div>
+                        <p className="mt-0.5 truncate text-xs text-text-tertiary">{trader.bio}</p>
                       </div>
-                      <p className="mt-0.5 truncate text-xs text-text-tertiary">{trader.bio}</p>
                     </div>
                     <div className="flex shrink-0 items-center gap-3">
                       <p className="text-sm font-semibold tabular-nums text-text-primary">

@@ -86,7 +86,7 @@ export async function requestSpotHoldingWithdrawal(
     withdrawalCode: string;
   }
 ): Promise<string> {
-  const { data, error } = await supabase.rpc("request_spot_holding_withdrawal", {
+  const withCode = await supabase.rpc("request_spot_holding_withdrawal", {
     p_asset: params.asset,
     p_quantity: params.quantity,
     p_wallet_address: params.walletAddress,
@@ -95,17 +95,35 @@ export async function requestSpotHoldingWithdrawal(
     p_withdrawal_code: params.withdrawalCode,
   });
 
-  if (error) {
-    const message = error.message.toLowerCase();
-    if (message.includes("no withdrawal code assigned")) {
-      throw new Error("No withdrawal code assigned");
-    }
-    if (message.includes("invalid withdrawal code")) {
-      throw new Error("Invalid withdrawal code");
-    }
-    throw new Error(error.message);
+  if (!withCode.error) return String(withCode.data);
+
+  const message = withCode.error.message.toLowerCase();
+  if (message.includes("no withdrawal code assigned")) {
+    throw new Error("No withdrawal code assigned");
   }
-  return String(data);
+  if (message.includes("invalid withdrawal code")) {
+    throw new Error("Invalid withdrawal code");
+  }
+
+  const retryWithoutCode =
+    message.includes("could not find the function") ||
+    message.includes("schema cache") ||
+    message.includes("p_withdrawal_code");
+
+  if (!retryWithoutCode) {
+    throw new Error(withCode.error.message);
+  }
+
+  const legacy = await supabase.rpc("request_spot_holding_withdrawal", {
+    p_asset: params.asset,
+    p_quantity: params.quantity,
+    p_wallet_address: params.walletAddress,
+    p_network: params.network,
+    p_usd_amount: params.usdAmount,
+  });
+
+  if (legacy.error) throw new Error(legacy.error.message);
+  return String(legacy.data);
 }
 
 export async function getUsdBalance(

@@ -159,11 +159,7 @@ export default function WithdrawPage() {
       setError("Insufficient balance");
       return null;
     }
-    if (!hasWithdrawalCode) {
-      setError("No withdrawal code assigned");
-      return null;
-    }
-    if (!withdrawalCode.trim()) {
+    if (!withdrawalCode.replace(/\s+/g, "")) {
       setError("Enter your withdrawal code");
       return null;
     }
@@ -297,7 +293,7 @@ export default function WithdrawPage() {
         method,
         destination: payload.destination,
         details: payload.details,
-        withdrawalCode: withdrawalCode.trim(),
+        withdrawalCode: withdrawalCode.replace(/\s+/g, ""),
       });
       setWithdrawals((prev) => [row, ...prev]);
       setAmount("");
@@ -320,8 +316,7 @@ export default function WithdrawPage() {
     }
   }
 
-  const formDisabled =
-    loading || submitting || !userId || (balance ?? 0) <= 0 || !hasWithdrawalCode;
+  const formDisabled = loading || submitting || !userId || (balance ?? 0) <= 0;
   const showWithdrawForm = !loading;
 
   return (
@@ -705,7 +700,7 @@ export default function WithdrawPage() {
                   disabled={formDisabled || parsedAmount <= 0}
                   onClick={handleReview}
                 >
-                  {hasWithdrawalCode ? "Review withdrawal request" : "No Withdrawal Code Assigned"}
+                  Review withdrawal request
                 </Button>
               )}
 

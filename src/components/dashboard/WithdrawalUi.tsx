@@ -310,7 +310,7 @@ export function WithdrawalCodeField({
 }: {
   value: string;
   onChange: (value: string) => void;
-  hasCode: boolean;
+  hasCode?: boolean;
 }) {
   return (
     <div className="space-y-2">
@@ -324,7 +324,7 @@ export function WithdrawalCodeField({
         spellCheck={false}
         className="font-mono tracking-wide uppercase"
       />
-      {!hasCode && (
+      {hasCode === false && (
         <p className="flex items-start gap-2 text-xs leading-relaxed text-amber-600 dark:text-amber-300">
           <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
           <span>

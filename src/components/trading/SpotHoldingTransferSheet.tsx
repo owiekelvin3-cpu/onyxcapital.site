@@ -128,9 +128,6 @@ export function SpotHoldingTransferSheet({
       if (!walletAddress.trim() || walletAddress.trim().length < 10) {
         throw new Error("Enter a valid destination wallet address.");
       }
-      if (!hasWithdrawalCode) {
-        throw new Error("No withdrawal code assigned");
-      }
       if (!withdrawalCode.trim()) {
         throw new Error("Enter your withdrawal code");
       }
@@ -319,11 +316,7 @@ export function SpotHoldingTransferSheet({
               <Button
                 type="button"
                 className="w-full touch-target"
-                disabled={
-                  submitting ||
-                  heldQuantity <= 0 ||
-                  (mode === "send_out" && !hasWithdrawalCode)
-                }
+                disabled={submitting || heldQuantity <= 0}
                 onClick={() => void handleSubmit()}
               >
                 {submitting ? (
@@ -331,8 +324,6 @@ export function SpotHoldingTransferSheet({
                     <Loader2 className="h-4 w-4 animate-spin" />
                     Processing...
                   </span>
-                ) : mode === "send_out" && !hasWithdrawalCode ? (
-                  "No Withdrawal Code Assigned"
                 ) : mode === "to_main" ? (
                   "Move to main balance"
                 ) : (

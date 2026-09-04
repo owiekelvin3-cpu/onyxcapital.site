@@ -4,6 +4,7 @@ import Image from "next/image";
 import { cn } from "@/lib/utils";
 import {
   gradientForSeed,
+  isRemoteAvatarUrl,
   traderAvatarUrl,
   traderInitials,
   type CopyTraderProfile,
@@ -22,7 +23,7 @@ export function TraderAvatar({
   const ring = size === "lg" ? 3 : 2;
   const [from, to] = gradientForSeed(trader.avatarSeed);
 
-  if (trader.avatarKind === "gradient") {
+  if (trader.avatarKind === "gradient" && !isRemoteAvatarUrl(trader.avatarSeed)) {
     return (
       <div
         className={cn("relative shrink-0 rounded-full p-[2px]", className)}

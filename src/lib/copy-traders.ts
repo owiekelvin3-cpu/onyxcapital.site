@@ -1,12 +1,17 @@
-export type TraderAvatarKind = "anime" | "illustrated" | "gradient" | "pixel" | "emoji";
+export type TraderAvatarKind = "anime" | "illustrated" | "gradient" | "pixel" | "emoji" | "photo";
 
 export const TRADER_AVATAR_KINDS: TraderAvatarKind[] = [
+  "photo",
   "illustrated",
   "anime",
   "gradient",
   "pixel",
   "emoji",
 ];
+
+export function isRemoteAvatarUrl(value: string): boolean {
+  return /^https?:\/\//i.test(value.trim());
+}
 
 export type CopyTraderProfile = {
   id?: string;
@@ -18,7 +23,7 @@ export type CopyTraderProfile = {
   winRate: number;
   rating: number;
   avatarKind: TraderAvatarKind;
-  /** DiceBear seed or gradient key */
+  /** DiceBear seed, gradient key, or uploaded image URL when avatarKind is photo */
   avatarSeed: string;
   ringColor: string;
   verified?: boolean;
@@ -108,6 +113,7 @@ export function sectionTitle(sectionId: string): string {
 }
 
 export function mapCopyTraderRow(row: CopyTraderRow): CopyTraderProfile {
+  const kind = TRADER_AVATAR_KINDS.includes(row.avatar_kind) ? row.avatar_kind : "illustrated";
   return {
     id: row.id,
     name: row.name,
@@ -117,7 +123,7 @@ export function mapCopyTraderRow(row: CopyTraderRow): CopyTraderProfile {
     followers: Number(row.followers),
     winRate: Number(row.win_rate),
     rating: Number(row.rating),
-    avatarKind: row.avatar_kind,
+    avatarKind: isRemoteAvatarUrl(row.avatar_seed) ? "photo" : kind,
     avatarSeed: row.avatar_seed,
     ringColor: row.ring_color,
     verified: row.verified,
@@ -162,6 +168,10 @@ function dicebear(style: string, seed: string, background?: string) {
 }
 
 export function traderAvatarUrl(trader: CopyTraderProfile): string {
+  if (isRemoteAvatarUrl(trader.avatarSeed)) {
+    return trader.avatarSeed.trim();
+  }
+
   switch (trader.avatarKind) {
     case "anime":
       return dicebear("adventurer", trader.avatarSeed, "ffd5dc,ffdfbf,c0aede");
@@ -171,9 +181,10 @@ export function traderAvatarUrl(trader: CopyTraderProfile): string {
       return dicebear("pixel-art", trader.avatarSeed, "fef3c7,d1fae5,e0e7ff");
     case "emoji":
       return dicebear("fun-emoji", trader.avatarSeed, "ffedd5,fecdd3,e9d5ff");
+    case "photo":
     case "gradient":
     default:
-      return dicebear("notionists", trader.avatarSeed, "e2e8f0,f1f5f9,e0f2fe");
+      return dicebear("notionists", trader.avatarSeed || "trader", "e2e8f0,f1f5f9,e0f2fe");
   }
 }
 

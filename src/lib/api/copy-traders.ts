@@ -50,15 +50,20 @@ export type CopyTraderInput = {
   isActive: boolean;
 };
 
+function clamp(value: number, min: number, max: number, fallback = min) {
+  if (!Number.isFinite(value)) return fallback;
+  return Math.min(max, Math.max(min, value));
+}
+
 function toRow(input: CopyTraderInput) {
   return {
     name: input.name.trim(),
     handle: input.handle.trim(),
     bio: input.bio.trim(),
-    roi: input.roi,
-    followers: Math.max(0, Math.round(input.followers)),
-    win_rate: input.winRate,
-    rating: input.rating,
+    roi: Number.isFinite(input.roi) ? input.roi : 0,
+    followers: Math.max(0, Math.round(Number(input.followers) || 0)),
+    win_rate: clamp(Number(input.winRate), 0, 100, 0),
+    rating: clamp(Math.round(Number(input.rating) * 100) / 100, 0, 5, 4.5),
     avatar_kind: input.avatarKind,
     avatar_seed: input.avatarSeed.trim() || "trader",
     ring_color: input.ringColor.trim() || "#6366f1",

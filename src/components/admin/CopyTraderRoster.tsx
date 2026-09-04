@@ -251,6 +251,16 @@ export function CopyTraderRoster({
       onError(t("admin.copyTradingPhotoRequired"));
       return;
     }
+    const rating = Number(draft.rating);
+    if (!Number.isFinite(rating) || rating < 0 || rating > 5) {
+      onError(t("admin.copyTradingRatingRange"));
+      return;
+    }
+    const winRate = Number(draft.winRate);
+    if (!Number.isFinite(winRate) || winRate < 0 || winRate > 100) {
+      onError(t("admin.copyTradingWinRateRange"));
+      return;
+    }
 
     setBusy(true);
     onError("");
@@ -263,7 +273,7 @@ export function CopyTraderRoster({
         roi: Number(draft.roi) || 0,
         followers: Number(draft.followers) || 0,
         winRate: Number(draft.winRate) || 0,
-        rating: Number(draft.rating) || 0,
+        rating: Math.min(5, Math.max(0, Number(draft.rating) || 0)),
         sortOrder: Number(draft.sortOrder) || 0,
         avatarSeed:
           draft.avatarKind === "photo"
@@ -276,7 +286,7 @@ export function CopyTraderRoster({
         await persist(payload);
       } catch (err) {
         const message = err instanceof Error ? err.message : "";
-        if (payload.avatarKind === "photo" && /avatar_kind|check constraint/i.test(message)) {
+        if (payload.avatarKind === "photo" && /avatar_kind/i.test(message)) {
           await persist({ ...payload, avatarKind: "illustrated" });
         } else {
           throw err;
@@ -286,7 +296,14 @@ export function CopyTraderRoster({
       resetForm();
       await onChange();
     } catch (err) {
-      onError(err instanceof Error ? err.message : t("admin.copyTradingPriceRequired"));
+      const message = err instanceof Error ? err.message : t("admin.copyTradingPriceRequired");
+      if (/copy_traders_rating_check|rating_check/i.test(message)) {
+        onError(t("admin.copyTradingRatingRange"));
+      } else if (/copy_traders_win_rate|win_rate_check/i.test(message)) {
+        onError(t("admin.copyTradingWinRateRange"));
+      } else {
+        onError(message);
+      }
     } finally {
       setBusy(false);
     }
@@ -391,7 +408,10 @@ export function CopyTraderRoster({
               max={100}
               step="0.1"
               value={draft.winRate}
-              onChange={(e) => setField("winRate", Number(e.target.value))}
+              onChange={(e) => {
+                const next = Number(e.target.value);
+                setField("winRate", Number.isFinite(next) ? Math.min(100, Math.max(0, next)) : 0);
+              }}
             />
             <Input
               label={t("admin.copyTradingFieldFollowers")}
@@ -407,7 +427,10 @@ export function CopyTraderRoster({
               max={5}
               step="0.1"
               value={draft.rating}
-              onChange={(e) => setField("rating", Number(e.target.value))}
+              onChange={(e) => {
+                const next = Number(e.target.value);
+                setField("rating", Number.isFinite(next) ? Math.min(5, Math.max(0, next)) : 0);
+              }}
             />
             <Input
               label={t("admin.copyTradingFieldBadge")}

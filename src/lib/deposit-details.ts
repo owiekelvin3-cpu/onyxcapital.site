@@ -17,7 +17,7 @@ export type PlainDepositMeta = {
 
 export type ParsedDepositNotes = GiftCardDepositMeta | PlainDepositMeta;
 
-export function parseDepositNotes(notes: string | null, method: string): ParsedDepositNotes {
+export function parseDepositNotes(notes: string | null | undefined, method: string): ParsedDepositNotes {
   if (!notes) {
     return method.startsWith("gift_card_") ? { type: "gift_card" } : { type: "plain" };
   }

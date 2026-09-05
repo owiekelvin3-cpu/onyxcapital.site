@@ -58,7 +58,7 @@ export default function AdminWithdrawalsPage() {
     setMessage("");
     try {
       await rejectWithdrawal(rejecting.id, reason);
-      setMessage("Withdrawal rejected");
+      setMessage("Withdrawal rejected. The held funds were returned to the user.");
       setRejecting(null);
       await load();
     } catch (e) {

@@ -65,7 +65,8 @@ export function AdminWithdrawalRejectDialog({
               Reject withdrawal
             </h2>
             <p className="mt-1 text-xs text-text-tertiary">
-              {formatCurrency(amount)} · {userLabel}
+              {formatCurrency(amount)} · {userLabel}. The held amount is added back to their
+              balance.
             </p>
           </div>
           <button

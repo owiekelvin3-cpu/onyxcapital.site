@@ -1,4 +1,4 @@
-Contact: mailto:support@onyxcapital.site
+Contact: mailto:Onyxcapitalsupport@gmail.com
 Contact: https://onyxcapital.site/help
 Preferred-Languages: en
 Canonical: https://onyxcapital.site/.well-known/security.txt

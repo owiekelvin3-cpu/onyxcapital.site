@@ -5,6 +5,7 @@ export const BRAND = {
   description:
     "Learn proven strategies from top industry experts to grow your capital. Trade crypto, stocks, and forex on one secure platform.",
   domain: "onyxcapital.site",
+  supportEmail: "Onyxcapitalsupport@gmail.com",
 } as const;
 
 /** Minimum age (in years) required to create an account. */

@@ -97,7 +97,7 @@ export const SITE_PAGES: Record<
       "Copy trading: select experts to follow and trades are mirrored automatically at your allocation. Pause or change experts anytime.",
       "Mining: after payment, hashing starts on your contract. First output is typically released after 48 hours, then daily.",
       "Staking: lock a term from 30 to 360 days. Published plan returns range from 5% to 25% depending on duration.",
-      "Need more help? Open Dashboard → Support for live chat with our team, or email support@onyxcapital.site — available 24/7.",
+      "Need more help? Open Dashboard → Support for live chat with our team, or email Onyxcapitalsupport@gmail.com — available 24/7.",
     ],
   },
   terms: {

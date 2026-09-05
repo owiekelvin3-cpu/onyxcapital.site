@@ -2,7 +2,8 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
-import { Comments, Plus, Search } from "@/components/icons";
+import { Comments, Mail, Plus, Search } from "@/components/icons";
+import { BRAND } from "@/lib/constants";
 import { createClient } from "@/lib/supabase/client";
 import { useUserSupport } from "@/hooks/useUserSupport";
 import { Button } from "@/components/ui/Button";
@@ -204,7 +205,8 @@ export default function SupportPage() {
             <h1 className="text-xl sm:text-2xl font-bold text-text-primary mt-1">Support</h1>
             <p className="text-sm text-text-tertiary mt-1">
               Chat with our team about deposits, withdrawals, trading, and account issues.
-              {isTawkEnabled() ? " Use Live chat for an instant reply." : ""}
+              {isTawkEnabled() ? " Use Live chat for an instant reply." : ""} Email{" "}
+              {BRAND.supportEmail}.
             </p>
           </div>
           <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
@@ -230,6 +232,17 @@ export default function SupportPage() {
               Live chat
             </Button>
           )}
+          <Button
+            size="sm"
+            variant="outline"
+            className="w-full rounded-full sm:w-auto"
+            onClick={() => {
+              window.location.href = `mailto:${BRAND.supportEmail}`;
+            }}
+          >
+            <Mail className="h-3.5 w-3.5" />
+            Email support
+          </Button>
           </div>
         </div>
       </div>

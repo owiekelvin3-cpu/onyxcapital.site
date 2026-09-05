@@ -1,4 +1,4 @@
-import { MIN_ACCOUNT_AGE } from "@/lib/constants";
+import { BRAND, MIN_ACCOUNT_AGE } from "@/lib/constants";
 
 export type LegalSection = {
   id: string;
@@ -28,7 +28,7 @@ export const LEGAL_PAGES: Record<"terms" | "privacy", LegalPage> = {
       "The rules, rights, and responsibilities that govern your use of Onyx Capital.",
     lastUpdated: "August 8, 2026",
     effectiveDate: "August 8, 2026",
-    contactEmail: "legal@onyxcapital.site",
+    contactEmail: BRAND.supportEmail,
     quickFacts: [
       { label: "Minimum age", value: `${MIN_ACCOUNT_AGE}+` },
       { label: "Jurisdiction", value: "Global access" },
@@ -153,7 +153,7 @@ export const LEGAL_PAGES: Record<"terms" | "privacy", LegalPage> = {
         summary: "How legal disputes are handled.",
         paragraphs: [
           "These Terms are governed by the laws specified in your account jurisdiction notice, without regard to conflict-of-law principles.",
-          "Before initiating formal proceedings, you agree to contact legal@onyxcapital.site to attempt good-faith resolution. Where permitted, disputes may be resolved through binding arbitration rather than class action litigation.",
+          `Before initiating formal proceedings, you agree to contact ${BRAND.supportEmail} to attempt good-faith resolution. Where permitted, disputes may be resolved through binding arbitration rather than class action litigation.`,
         ],
       },
       {
@@ -170,7 +170,7 @@ export const LEGAL_PAGES: Record<"terms" | "privacy", LegalPage> = {
         title: "12. Contact",
         summary: "Reach our legal team.",
         paragraphs: [
-          "Questions about these Terms may be directed to legal@onyxcapital.site or Onyx Capital Legal, Onyx Capital, via the Help Center.",
+          `Questions about these Terms may be directed to ${BRAND.supportEmail} or Onyx Capital Legal, Onyx Capital, via the Help Center.`,
         ],
       },
     ],
@@ -182,7 +182,7 @@ export const LEGAL_PAGES: Record<"terms" | "privacy", LegalPage> = {
       "How Onyx Capital collects, uses, shares, and protects your personal information.",
     lastUpdated: "August 8, 2026",
     effectiveDate: "August 8, 2026",
-    contactEmail: "privacy@onyxcapital.site",
+    contactEmail: BRAND.supportEmail,
     quickFacts: [
       { label: "Encryption", value: "TLS 1.3 + AES-256" },
       { label: "Data sales", value: "Never" },
@@ -292,7 +292,7 @@ export const LEGAL_PAGES: Record<"terms" | "privacy", LegalPage> = {
           "Employee training and vendor security reviews.",
         ],
         highlight:
-          "No method of transmission or storage is 100% secure. Report suspected incidents to security@onyxcapital.site immediately.",
+          `No method of transmission or storage is 100% secure. Report suspected incidents to ${BRAND.supportEmail} immediately.`,
       },
       {
         id: "rights",
@@ -300,7 +300,7 @@ export const LEGAL_PAGES: Record<"terms" | "privacy", LegalPage> = {
         summary: "Choices and requests you can make.",
         paragraphs: [
           "Depending on your location, you may have rights to access, correct, delete, restrict, or port your personal data, and to object to certain processing or withdraw consent.",
-          "Submit requests to privacy@onyxcapital.site. We may verify your identity before fulfilling a request. You may also lodge a complaint with your local data protection authority.",
+          `Submit requests to ${BRAND.supportEmail}. We may verify your identity before fulfilling a request. You may also lodge a complaint with your local data protection authority.`,
         ],
         bullets: [
           "Access & portability: receive a copy of data we hold about you.",
@@ -328,7 +328,7 @@ export const LEGAL_PAGES: Record<"terms" | "privacy", LegalPage> = {
         title: "11. Children's Privacy",
         summary: "Our services are not directed to minors.",
         paragraphs: [
-          `The Platform is not intended for individuals under ${MIN_ACCOUNT_AGE}. We do not knowingly collect personal information from children. If you believe a minor has provided us data, contact privacy@onyxcapital.site and we will take steps to delete it.`,
+          `The Platform is not intended for individuals under ${MIN_ACCOUNT_AGE}. We do not knowingly collect personal information from children. If you believe a minor has provided us data, contact ${BRAND.supportEmail} and we will take steps to delete it.`,
         ],
       },
       {
@@ -344,7 +344,7 @@ export const LEGAL_PAGES: Record<"terms" | "privacy", LegalPage> = {
         title: "13. Contact Us",
         summary: "Privacy inquiries and data requests.",
         paragraphs: [
-          "For privacy questions, data subject requests, or concerns about this policy, contact privacy@onyxcapital.site or write to Onyx Capital Privacy, Onyx Capital, via the Help Center.",
+          `For privacy questions, data subject requests, or concerns about this policy, contact ${BRAND.supportEmail} or write to Onyx Capital Privacy, Onyx Capital, via the Help Center.`,
         ],
       },
     ],

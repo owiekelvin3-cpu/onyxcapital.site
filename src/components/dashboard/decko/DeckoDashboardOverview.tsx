@@ -21,6 +21,7 @@ import {
   Bot,
   TrendingUp,
   Users,
+  Wallet,
   Zap,
 } from "@/components/icons";
 import { Button } from "@/components/ui/Button";
@@ -117,16 +118,19 @@ function KpiCard({
 
 function MobilePortfolioHero({
   totalValue,
+  depositBalance,
   currency,
   profitTotal,
   profitTrend,
 }: {
   totalValue: number;
+  depositBalance: number;
   currency: string;
   profitTotal: number;
   profitTrend: number;
 }) {
   const animatedTotal = useCountUp(totalValue, { decimals: 2, duration: 1.2 });
+  const animatedDeposit = useCountUp(depositBalance, { decimals: 2, duration: 1.2 });
   const profitUp = profitTotal >= 0;
   const trendUp = profitTrend >= 0;
 
@@ -161,6 +165,18 @@ function MobilePortfolioHero({
             {profitTrend.toFixed(1)}% realized P&amp;L
           </p>
         </div>
+      </div>
+
+      <div className="flex items-center justify-between gap-3 border-t border-border px-4 py-3 sm:px-5">
+        <div className="min-w-0">
+          <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-text-tertiary sm:text-xs">
+            Deposit balance
+          </p>
+          <p className="mt-1 truncate text-lg font-bold tabular-nums tracking-tight text-text-primary sm:text-xl">
+            {formatCurrency(Number(animatedDeposit), currency)}
+          </p>
+        </div>
+        <p className="shrink-0 text-[11px] text-text-tertiary sm:text-xs">Available cash</p>
       </div>
 
       <div className="flex gap-2 border-t border-border bg-bg-secondary/40 p-3 sm:p-4">
@@ -302,6 +318,7 @@ export function DeckoDashboardOverview({
       {/* Mobile hero — portfolio & profit side by side */}
       <MobilePortfolioHero
         totalValue={summary.totalValue}
+        depositBalance={summary.cashBalance}
         currency={summary.currency}
         profitTotal={profitTotal}
         profitTrend={profitTrend}
@@ -313,7 +330,7 @@ export function DeckoDashboardOverview({
       </div>
 
       {/* Desktop KPIs */}
-      <DeckoStagger className="hidden gap-4 lg:grid lg:grid-cols-2">
+      <DeckoStagger className="hidden gap-4 lg:grid lg:grid-cols-3">
         <KpiCard
           label="Total Portfolio"
           numeric={summary.totalValue}
@@ -330,6 +347,14 @@ export function DeckoDashboardOverview({
           trendLabel="realized P&L"
           icon={TrendingUp}
           delay={0.05}
+        />
+        <KpiCard
+          label="Deposit balance"
+          numeric={summary.cashBalance}
+          decimals={2}
+          prefix="$"
+          icon={Wallet}
+          delay={0.1}
         />
       </DeckoStagger>
 

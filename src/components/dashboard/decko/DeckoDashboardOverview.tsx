@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useMemo } from "react";
 import { motion } from "framer-motion";
-import type { PortfolioSummary } from "@/lib/api/trading";
+import { depositOnAccount, type PortfolioSummary } from "@/lib/api/trading";
 import type { ChartPoint } from "@/lib/chart-data";
 import type { MarketPair } from "@/lib/market-data";
 import type { TradeRow } from "@/lib/supabase/types";
@@ -177,7 +177,7 @@ function MobilePortfolioHero({
             {formatCurrency(Number(animatedDeposit), currency)}
           </p>
         </div>
-        <p className="shrink-0 text-[11px] text-text-tertiary sm:text-xs">Available cash</p>
+        <p className="shrink-0 text-[11px] text-text-tertiary sm:text-xs">Deposits only</p>
       </div>
 
       <div className="flex gap-2 border-t border-border bg-bg-secondary/40 p-3 sm:p-4">
@@ -268,6 +268,7 @@ export function DeckoDashboardOverview({
   const firstName = displayName.split(" ")[0] || displayName || "Trader";
   const initial = (displayName || userEmail || "U").charAt(0).toUpperCase();
 
+  const depositBalance = depositOnAccount(summary.cashBalance, profitTotal);
   const profitTrend =
     summary.totalValue > 0 ? (profitTotal / summary.totalValue) * 100 : 0;
   const depositTrend =
@@ -339,7 +340,7 @@ export function DeckoDashboardOverview({
       {/* Mobile hero — portfolio & profit side by side */}
       <MobilePortfolioHero
         totalValue={summary.totalValue}
-        depositBalance={summary.cashBalance}
+        depositBalance={depositBalance}
         currency={summary.currency}
         profitTotal={profitTotal}
         profitTrend={profitTrend}
@@ -371,7 +372,7 @@ export function DeckoDashboardOverview({
         />
         <KpiCard
           label="Deposit balance"
-          numeric={summary.cashBalance}
+          numeric={depositBalance}
           decimals={2}
           prefix="$"
           icon={Wallet}

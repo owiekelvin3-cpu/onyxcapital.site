@@ -196,6 +196,13 @@ export function profitOnAccount(lifetimeProfit: number, cashBalance: number): nu
   return Math.min(profit, cash);
 }
 
+/** Cash that is not profit — admin profit credits stay in Profit Total, not Deposit balance. */
+export function depositOnAccount(cashBalance: number, lifetimeProfit: number): number {
+  const cash = Math.round(Math.max(0, Number(cashBalance) || 0) * 100) / 100;
+  const profit = profitOnAccount(lifetimeProfit, cash);
+  return Math.round(Math.max(0, cash - Math.max(0, profit)) * 100) / 100;
+}
+
 export async function getLifetimeProfit(
   supabase: SupabaseClient,
   userId: string

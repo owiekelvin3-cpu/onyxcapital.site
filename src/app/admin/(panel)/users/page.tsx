@@ -25,7 +25,7 @@ import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { formatCurrency, formatDate, cn } from "@/lib/utils";
 import { formatProfileLocation } from "@/lib/user-location";
-import { Globe, MapPin, RefreshCw, Search, X } from "@/components/icons";
+import { Globe, MapPin, Phone, RefreshCw, Search, X } from "@/components/icons";
 
 const FEE_TYPES = [
   { id: "withdrawal_processing", label: "Withdrawal processing fee" },
@@ -33,6 +33,17 @@ const FEE_TYPES = [
   { id: "wallet_activation", label: "Wallet activation fee" },
   { id: "custom", label: "Custom fee" },
 ] as const;
+
+function userPhone(
+  profile: Profile,
+  auth?: { phone?: string | null } | null
+): string {
+  const fromProfile = profile.phone?.trim();
+  if (fromProfile) return fromProfile;
+  const fromAuth = auth?.phone?.trim();
+  if (fromAuth) return fromAuth;
+  return "";
+}
 
 function hasLocationData(profile: Profile): boolean {
   return Boolean(
@@ -98,6 +109,7 @@ export default function AdminUsersPage() {
         (u.country?.toLowerCase().includes(q) ?? false) ||
         (u.city?.toLowerCase().includes(q) ?? false) ||
         (u.last_known_ip?.toLowerCase().includes(q) ?? false) ||
+        (u.phone?.toLowerCase().includes(q) ?? false) ||
         (location !== "—" && location.includes(q))
       );
     });
@@ -377,6 +389,9 @@ export default function AdminUsersPage() {
                 >
                   <p className="font-medium text-text-primary truncate">{u.full_name || u.email}</p>
                   <p className="text-xs text-text-tertiary truncate">{u.email}</p>
+                  {u.phone?.trim() && (
+                    <p className="mt-0.5 truncate text-xs text-text-secondary">{u.phone}</p>
+                  )}
                   <p className="mt-1 flex items-center gap-1 text-xs text-text-secondary">
                     <MapPin className="h-3 w-3 shrink-0 text-text-tertiary" />
                     <span className="truncate">{formatProfileLocation(u)}</span>
@@ -425,6 +440,10 @@ export default function AdminUsersPage() {
               <div>
                 <h2 className="text-lg font-semibold text-text-primary">{details.profile.full_name || details.profile.email}</h2>
                 <p className="text-sm text-text-tertiary">{details.profile.email}</p>
+                <p className="mt-1 flex items-center gap-1.5 text-sm text-text-primary">
+                  <Phone className="h-3.5 w-3.5 text-text-tertiary" />
+                  {userPhone(details.profile, details.auth) || "No phone on file"}
+                </p>
                 <p className="text-xs text-text-tertiary mt-1">Joined {formatDate(details.profile.created_at)}</p>
               </div>
               )}
@@ -480,6 +499,14 @@ export default function AdminUsersPage() {
                           {t("admin.userDetail.timezone")}
                         </dt>
                         <dd className="mt-0.5 text-text-primary">{details.profile.timezone || "—"}</dd>
+                      </div>
+                      <div className="sm:col-span-2">
+                        <dt className="text-[11px] uppercase tracking-wide text-text-tertiary">
+                          Phone
+                        </dt>
+                        <dd className="mt-0.5 font-medium text-text-primary">
+                          {userPhone(details.profile, details.auth) || "—"}
+                        </dd>
                       </div>
                       <div className="sm:col-span-2">
                         <dt className="text-[11px] uppercase tracking-wide text-text-tertiary">
@@ -1025,6 +1052,7 @@ export default function AdminUsersPage() {
                   <tr className="border-b border-border">
                     <th className="px-4 py-3 font-semibold">{t("admin.name")}</th>
                     <th className="px-4 py-3 font-semibold">{t("admin.email")}</th>
+                    <th className="px-4 py-3 font-semibold">Phone</th>
                     <th className="px-4 py-3 font-semibold">{t("admin.userDetail.locationShort")}</th>
                     <th className="px-4 py-3 font-semibold">{t("admin.kyc")}</th>
                     <th className="px-4 py-3 font-semibold">{t("common.status")}</th>
@@ -1044,6 +1072,9 @@ export default function AdminUsersPage() {
                         {u.full_name || "—"}
                       </td>
                       <td className="max-w-[180px] truncate px-4 py-3 text-text-tertiary">{u.email}</td>
+                      <td className="max-w-[140px] truncate px-4 py-3 text-text-secondary">
+                        {u.phone?.trim() || "—"}
+                      </td>
                       <td className="max-w-[160px] truncate px-4 py-3 text-text-secondary">
                         {formatProfileLocation(u)}
                       </td>
@@ -1077,7 +1108,13 @@ export default function AdminUsersPage() {
       <AdminMobilePanel
         open={showDetail}
         title={detailTitle}
-        subtitle={details?.profile.email}
+        subtitle={
+          details
+            ? [details.profile.email, userPhone(details.profile, details.auth)]
+                .filter(Boolean)
+                .join(" · ")
+            : undefined
+        }
         onClose={closeUser}
       >
         {renderUserDetails({ hideHeader: true })}

@@ -1774,7 +1774,7 @@
       "title": "User details",
       "view": "View details",
       "close": "Close panel",
-      "searchPlaceholder": "Search by name, email, role, location…",
+      "searchPlaceholder": "Search by name, email, phone, role, location…",
       "locationShort": "Location",
       "joined": "Joined",
       "balance": "Balance",

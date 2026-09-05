@@ -49,6 +49,7 @@ export interface AdminUserDetails {
     created_at?: string | null;
     last_sign_in_at?: string | null;
     email_confirmed_at?: string | null;
+    phone?: string | null;
     has_password?: boolean;
     providers?: string[];
   };

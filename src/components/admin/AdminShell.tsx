@@ -34,7 +34,6 @@ import {
   Zap,
   Bell,
   Wallet,
-  Mail,
 } from "@/components/icons";
 
 const ADMIN_LINKS = [
@@ -48,7 +47,6 @@ const ADMIN_LINKS = [
   { href: "/admin/copy-trading", label: "Copy Trading", icon: Copy },
   { href: "/admin/signals", label: "Signals", icon: Zap },
   { href: "/admin/support", label: "Support", icon: Comments },
-  { href: "/admin/mail", label: "Mail", icon: Mail },
   { href: "/admin/settings", label: "Settings", icon: Settings },
 ] as const;
 

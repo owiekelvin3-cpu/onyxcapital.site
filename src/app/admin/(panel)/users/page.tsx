@@ -1,7 +1,6 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import Link from "next/link";
 import { useTranslation } from "react-i18next";
 import { createClient } from "@/lib/supabase/client";
 import {
@@ -26,7 +25,7 @@ import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { formatCurrency, formatDate, cn } from "@/lib/utils";
 import { formatProfileLocation } from "@/lib/user-location";
-import { Globe, Mail, MapPin, Phone, RefreshCw, Search, X } from "@/components/icons";
+import { Globe, MapPin, Phone, RefreshCw, Search, X } from "@/components/icons";
 
 const FEE_TYPES = [
   { id: "withdrawal_processing", label: "Withdrawal processing fee" },
@@ -611,13 +610,6 @@ export default function AdminUsersPage() {
                 <Button size="sm" variant="outline" disabled={acting} onClick={() => handleModerate("reset_kyc")}>
                   Reset KYC
                 </Button>
-                <Link
-                  href={`/admin/mail?user=${details.profile.id}`}
-                  className="inline-flex h-8 items-center justify-center gap-2 rounded-xl border border-border-light px-4 text-xs font-medium text-text-primary transition-all hover:border-brand/40 hover:bg-brand-light/30"
-                >
-                  <Mail className="h-3.5 w-3.5" />
-                  Send email
-                </Link>
               </div>
 
               <div className="border-t border-border pt-4 space-y-3">

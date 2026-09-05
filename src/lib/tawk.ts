@@ -3,6 +3,9 @@ const DEFAULT_WIDGET_ID = "default";
 const BUBBLE_MAX_PX = 96;
 
 type TawkApi = {
+  autoStart?: boolean;
+  start?: (opts?: { showWidget?: boolean }) => void;
+  onBeforeLoad?: () => void;
   onLoad?: () => void;
   onChatMaximized?: () => void;
   onChatMinimized?: () => void;
@@ -51,11 +54,18 @@ export function isTawkEnabled() {
 
 function tawkApi(): TawkApi {
   window.Tawk_API = window.Tawk_API || {};
+  window.Tawk_API.autoStart = false;
   return window.Tawk_API;
+}
+
+function setChatOpenClass(open: boolean) {
+  if (typeof document === "undefined") return;
+  document.documentElement.classList.toggle("tawk-chat-open", open);
 }
 
 function notifyChatOpen(open: boolean) {
   chatOpen = open;
+  setChatOpenClass(open);
   chatListeners.forEach((fn) => fn(open));
 }
 
@@ -108,14 +118,21 @@ function installHooks() {
   hooksInstalled = true;
 
   const api = tawkApi();
+  const previousBefore = api.onBeforeLoad;
   const previousLoad = api.onLoad;
   const previousMax = api.onChatMaximized;
   const previousMin = api.onChatMinimized;
 
+  api.onBeforeLoad = () => {
+    previousBefore?.();
+    api.hideWidget?.();
+  };
   api.onLoad = () => {
     previousLoad?.();
-    api.hideWidget?.();
-    suppressNativeTawkBubble();
+    if (!chatOpen) {
+      api.hideWidget?.();
+      suppressNativeTawkBubble();
+    }
   };
   api.onChatMaximized = () => {
     previousMax?.();
@@ -165,10 +182,11 @@ function ensureLoader() {
 
 export function openTawkChat() {
   if (typeof window === "undefined") return;
+  notifyChatOpen(true);
   whenTawkReady((api) => {
+    api.start?.({ showWidget: false });
     api.showWidget?.();
     api.maximize?.();
-    notifyChatOpen(true);
   });
 }
 

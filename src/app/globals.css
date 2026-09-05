@@ -1451,3 +1451,14 @@ html.support-chat-open body {
 .dark .legal-cta-shimmer {
   background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.04), transparent);
 }
+
+/* Hide Tawk's default bubble on first paint. Our draggable button opens the chat. */
+html:not(.tawk-chat-open) iframe[src*="tawk"],
+html:not(.tawk-chat-open) iframe[title*="chat widget"],
+html:not(.tawk-chat-open) [id^="tawk-"],
+html:not(.tawk-chat-open) [id^="tawkchat"],
+html:not(.tawk-chat-open) [class*="tawk-min"] {
+  opacity: 0 !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
+}

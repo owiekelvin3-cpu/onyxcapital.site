@@ -51,7 +51,9 @@ function readStoredPos(): Pos {
 export function TawkChat() {
   const pathname = usePathname() || "/";
   const hidden = pathname.startsWith("/admin");
-  const [pos, setPos] = useState<Pos | null>(null);
+  const [pos, setPos] = useState<Pos | null>(() =>
+    typeof window === "undefined" ? null : readStoredPos()
+  );
   const [chatOpen, setChatOpen] = useState(false);
   const [dragging, setDragging] = useState(false);
   const dragRef = useRef<{
@@ -66,35 +68,32 @@ export function TawkChat() {
   useEffect(() => {
     if (!isTawkEnabled()) return;
 
+    syncTawkWidget({ hidden });
+
     let cancelled = false;
 
-    async function sync() {
-      let name: string | null = null;
-      let email: string | null = null;
-      let userId: string | null = null;
+    async function identify() {
+      if (!hasSupabaseEnv()) return;
 
-      if (hasSupabaseEnv()) {
-        try {
-          const supabase = createClient();
-          const {
-            data: { user },
-          } = await supabase.auth.getUser();
-          if (user) {
-            userId = user.id;
-            email = user.email ?? null;
-            const metaName = user.user_metadata?.full_name;
-            name = typeof metaName === "string" && metaName.trim() ? metaName.trim() : email;
-          }
-        } catch {
-          /* widget still loads for guests */
-        }
+      try {
+        const supabase = createClient();
+        const {
+          data: { user },
+        } = await supabase.auth.getUser();
+        if (cancelled || !user) return;
+        const metaName = user.user_metadata?.full_name;
+        syncTawkWidget({
+          hidden,
+          userId: user.id,
+          email: user.email ?? null,
+          name: typeof metaName === "string" && metaName.trim() ? metaName.trim() : user.email ?? null,
+        });
+      } catch {
+        /* widget still loads for guests */
       }
-
-      if (cancelled) return;
-      syncTawkWidget({ hidden, name, email, userId });
     }
 
-    void sync();
+    void identify();
     return () => {
       cancelled = true;
     };

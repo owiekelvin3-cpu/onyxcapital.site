@@ -117,6 +117,12 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
     <html lang="en" className={`${inter.variable} dark h-full`} suppressHydrationWarning>
       <head>
         <ThemeScript />
+        <style
+          dangerouslySetInnerHTML={{
+            __html:
+              'html:not(.tawk-chat-open) iframe[src*="tawk"],html:not(.tawk-chat-open) iframe[title*="chat widget"],html:not(.tawk-chat-open) [id*="tawk"],html:not(.tawk-chat-open) [id*="Tawk"],html:not(.tawk-chat-open) [class*="tawk-min"]{opacity:0!important;visibility:hidden!important;pointer-events:none!important}',
+          }}
+        />
       </head>
       <body className="min-h-dvh w-full antialiased bg-bg-primary text-text-primary">
         <ThemeProvider>

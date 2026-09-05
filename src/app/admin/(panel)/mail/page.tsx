@@ -159,7 +159,7 @@ function AdminMailPageInner() {
     <div className="space-y-5">
       <AdminPageHeader
         title="Mail users"
-        subtitle={`Send branded emails from ${BRAND.name}. Replies go to ${SUPPORT_EMAIL}.`}
+        subtitle={`Sends from support@${BRAND.domain}. Replies go to ${SUPPORT_EMAIL}.`}
         action={
           <Button variant="outline" size="sm" onClick={() => void load()} disabled={loading}>
             <RefreshCw className="h-3.5 w-3.5" />
@@ -170,10 +170,24 @@ function AdminMailPageInner() {
 
       {config && !config.configured && (
         <p className="rounded-lg border border-brand/30 bg-brand/5 px-4 py-3 text-sm text-text-secondary">
-          Add <span className="font-medium text-text-primary">RESEND_API_KEY</span> in Vercel to
-          send mail. If Resend rejects Gmail as the From address, also set{" "}
-          <span className="font-medium text-text-primary">MAIL_FROM</span> to a verified domain
-          sender. Reply-to stays {SUPPORT_EMAIL}.
+          Add <span className="font-medium text-text-primary">RESEND_API_KEY</span> in Vercel, then
+          add and verify <span className="font-medium text-text-primary">{BRAND.domain}</span> at{" "}
+          <a
+            href="https://resend.com/domains"
+            target="_blank"
+            rel="noreferrer"
+            className="font-medium text-text-primary underline"
+          >
+            resend.com/domains
+          </a>
+          . Gmail cannot be used as the From address. Reply-to stays {SUPPORT_EMAIL}.
+        </p>
+      )}
+      {config?.configured && (
+        <p className="rounded-lg border border-border bg-bg-secondary/60 px-4 py-3 text-sm text-text-secondary">
+          From <span className="font-medium text-text-primary">{config.from}</span>
+          {" · "}
+          replies to <span className="font-medium text-text-primary">{config.replyTo}</span>
         </p>
       )}
 

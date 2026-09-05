@@ -2,12 +2,16 @@ import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { createServerClient } from "@supabase/ssr";
 import { ADMIN_AUTH_COOKIE } from "@/lib/auth-guards";
+import { BRAND } from "@/lib/constants";
 import {
+  MAIL_FROM_EMAIL,
   SUPPORT_EMAIL,
   getMailTemplate,
   isMailTemplateId,
   renderBrandEmailHtml,
   renderBrandEmailText,
+  resolveMailFrom,
+  resolveMailReplyTo,
 } from "@/lib/brand-email";
 import { createServiceClient } from "@/lib/supabase/service";
 
@@ -63,12 +67,15 @@ async function verifyAdminRequest() {
   return { ok: true as const, adminId: user.id, supabase };
 }
 
-function mailFromAddress() {
-  return process.env.MAIL_FROM?.trim() || `Onyx Capital <${SUPPORT_EMAIL}>`;
-}
-
-function mailReplyTo() {
-  return process.env.MAIL_REPLY_TO?.trim() || SUPPORT_EMAIL;
+function resendErrorMessage(message?: string) {
+  const text = message?.trim() || "";
+  if (/not verified|gmail\.com domain/i.test(text)) {
+    return `Resend cannot send from Gmail. Mail now sends from ${MAIL_FROM_EMAIL}. Add and verify ${BRAND.domain} at https://resend.com/domains, then try again.`;
+  }
+  return (
+    text ||
+    `Resend could not send this email. Verify ${BRAND.domain} at https://resend.com/domains.`
+  );
 }
 
 export async function GET() {
@@ -79,8 +86,8 @@ export async function GET() {
 
   return NextResponse.json({
     configured: Boolean(process.env.RESEND_API_KEY?.trim()),
-    from: mailFromAddress(),
-    replyTo: mailReplyTo(),
+    from: resolveMailFrom(),
+    replyTo: resolveMailReplyTo(),
     contactEmail: SUPPORT_EMAIL,
   });
 }
@@ -160,9 +167,9 @@ export async function POST(request: Request) {
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
-      from: mailFromAddress(),
+      from: resolveMailFrom(),
       to: [recipient.email],
-      reply_to: mailReplyTo(),
+      reply_to: resolveMailReplyTo(),
       subject,
       html,
       text,
@@ -178,9 +185,7 @@ export async function POST(request: Request) {
   if (!resendResponse.ok) {
     return NextResponse.json(
       {
-        error:
-          resendPayload.message ||
-          "Resend could not send this email. Verify the From address or set MAIL_FROM to a domain you own.",
+        error: resendErrorMessage(resendPayload.message),
       },
       { status: 502 }
     );
@@ -222,8 +227,8 @@ export async function POST(request: Request) {
     ok: true,
     to: recipient.email,
     subject,
-    from: mailFromAddress(),
-    replyTo: mailReplyTo(),
+    from: resolveMailFrom(),
+    replyTo: resolveMailReplyTo(),
     providerId: resendPayload.id ?? null,
   });
 }

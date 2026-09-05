@@ -1,6 +1,21 @@
 import { BRAND } from "@/lib/constants";
 
 export const SUPPORT_EMAIL = BRAND.supportEmail;
+/** Resend can only send from a domain you verify — never @gmail.com. */
+export const MAIL_FROM_EMAIL = `support@${BRAND.domain}`;
+export const MAIL_FROM_DEFAULT = `${BRAND.name} <${MAIL_FROM_EMAIL}>`;
+
+export function resolveMailFrom() {
+  const configured = process.env.MAIL_FROM?.trim();
+  if (configured && !/@gmail\.com\b/i.test(configured)) {
+    return configured;
+  }
+  return MAIL_FROM_DEFAULT;
+}
+
+export function resolveMailReplyTo() {
+  return process.env.MAIL_REPLY_TO?.trim() || SUPPORT_EMAIL;
+}
 
 export const MAIL_TEMPLATE_IDS = [
   "general",

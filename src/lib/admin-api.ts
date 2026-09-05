@@ -245,89 +245,6 @@ function isMissingRpc(message: string) {
   return /could not find the function|schema cache|does not exist/i.test(message);
 }
 
-function parseSpotHoldingNotes(notes?: string | null) {
-  if (!notes) return null;
-  try {
-    const parsed = JSON.parse(notes) as {
-      spot_holding_withdrawal?: boolean;
-      asset?: string;
-      quantity?: number;
-    };
-    if (parsed.spot_holding_withdrawal !== true) return null;
-    const asset = String(parsed.asset ?? "").trim().toUpperCase();
-    const quantity = Number(parsed.quantity ?? 0);
-    if (!asset || !(quantity > 0)) return null;
-    return { asset, quantity };
-  } catch {
-    return null;
-  }
-}
-
-async function creditRejectedWithdrawalBalance(
-  supabase: ReturnType<typeof createClient>,
-  withdrawalId: string
-) {
-  const { data: withdrawal, error: loadErr } = await supabase
-    .from("withdrawals")
-    .select("id, user_id, amount, currency, notes, status, refunded_at")
-    .eq("id", withdrawalId)
-    .maybeSingle();
-
-  const row = !loadErr
-    ? withdrawal
-    : (
-        await supabase
-          .from("withdrawals")
-          .select("id, user_id, amount, currency, notes, status")
-          .eq("id", withdrawalId)
-          .maybeSingle()
-      ).data;
-
-  if (!row || row.status !== "rejected") return;
-  if ("refunded_at" in row && row.refunded_at) return;
-
-  const refundAmount = Number(row.amount ?? 0);
-  if (refundAmount > 0) {
-    const { data: bal, error: balErr } = await supabase
-      .from("balances")
-      .select("amount")
-      .eq("user_id", row.user_id)
-      .maybeSingle();
-    if (balErr) throw balErr;
-
-    const { error: creditErr } = await supabase.from("balances").upsert(
-      {
-        user_id: row.user_id,
-        currency: row.currency || "USD",
-        amount: Number(bal?.amount ?? 0) + refundAmount,
-      },
-      { onConflict: "user_id" }
-    );
-    if (creditErr) throw creditErr;
-  }
-
-  const spot = parseSpotHoldingNotes(row.notes);
-  if (!spot) return;
-
-  const { data: holding } = await supabase
-    .from("holdings")
-    .select("quantity")
-    .eq("user_id", row.user_id)
-    .eq("asset", spot.asset)
-    .maybeSingle();
-
-  const { error: holdingErr } = await supabase.from("holdings").upsert(
-    {
-      user_id: row.user_id,
-      asset: spot.asset,
-      quantity: Number(holding?.quantity ?? 0) + spot.quantity,
-      updated_at: new Date().toISOString(),
-    },
-    { onConflict: "user_id,asset" }
-  );
-  if (holdingErr) throw holdingErr;
-}
-
 export async function rejectWithdrawal(withdrawalId: string, reason: string) {
   const supabase = createClient();
   const rejectionReason = reason.trim();
@@ -354,7 +271,10 @@ export async function rejectWithdrawal(withdrawalId: string, reason: string) {
     .eq("id", withdrawalId);
   if (updateErr) throw updateErr;
 
-  await creditRejectedWithdrawalBalance(supabase, withdrawalId);
+  // Cash is already returned by the database reject trigger. Only restore spot coins.
+  await supabase.rpc("restore_spot_holding_on_withdrawal_reject", {
+    p_withdrawal_id: withdrawalId,
+  });
 }
 
 export async function updateKycStatus(

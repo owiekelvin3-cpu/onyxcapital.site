@@ -187,8 +187,16 @@ export async function get24hProfit(
   return data.reduce((sum, row) => sum + (row.profit ?? 0), 0);
 }
 
-/** Total realized profit: trade credits + admin profit/loss adjustments */
-export async function getProfitTotal(
+/** Profit still sitting in the account — never more than cash, and 0 when the wallet is empty. */
+export function profitOnAccount(lifetimeProfit: number, cashBalance: number): number {
+  const cash = Math.round(Math.max(0, Number(cashBalance) || 0) * 100) / 100;
+  const profit = Math.round((Number(lifetimeProfit) || 0) * 100) / 100;
+  if (cash <= 0) return 0;
+  if (profit <= 0) return profit;
+  return Math.min(profit, cash);
+}
+
+export async function getLifetimeProfit(
   supabase: SupabaseClient,
   userId: string
 ): Promise<number> {
@@ -219,6 +227,18 @@ export async function getProfitTotal(
   );
 
   return Math.round((tradeProfit + adjustmentTotal + copyProfitTotal + referralTotal) * 100) / 100;
+}
+
+/** Profit remaining on the account after withdrawals. */
+export async function getProfitTotal(
+  supabase: SupabaseClient,
+  userId: string
+): Promise<number> {
+  const [lifetime, cash] = await Promise.all([
+    getLifetimeProfit(supabase, userId),
+    getUsdBalance(supabase, userId),
+  ]);
+  return profitOnAccount(lifetime, cash);
 }
 
 export async function getHoldings(

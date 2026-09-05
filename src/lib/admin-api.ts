@@ -232,6 +232,13 @@ export async function completeWithdrawal(withdrawalId: string) {
     .update({ status: "completed" as TransactionStatus })
     .eq("id", withdrawalId);
   if (error) throw error;
+
+  const { error: clawErr } = await supabase.rpc("apply_withdrawal_profit_clawback", {
+    p_withdrawal_id: withdrawalId,
+  });
+  if (clawErr && !isMissingRpc(clawErr.message)) {
+    throw new Error(rpcError(clawErr, "Withdrawal completed, but profit was not reduced."));
+  }
 }
 
 function isMissingRpc(message: string) {

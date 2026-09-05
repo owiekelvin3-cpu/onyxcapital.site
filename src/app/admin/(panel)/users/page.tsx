@@ -16,6 +16,7 @@ import {
   setAdminUserSignalPct,
 } from "@/lib/admin-api";
 import type { AdminUserFee, Profile } from "@/lib/admin-types";
+import { profitOnAccount } from "@/lib/api/trading";
 import { activeSignalPlanFromPackages, resolveDisplaySignalPct } from "@/lib/signal-plans";
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 import { AdminMobilePanel } from "@/components/admin/AdminMobilePanel";
@@ -507,10 +508,12 @@ export default function AdminUsersPage() {
                   <p
                     className={cn(
                       "text-lg font-bold",
-                      (details.profit_total ?? 0) >= 0 ? "text-green" : "text-red"
+                      profitOnAccount(details.profit_total ?? 0, details.balance) >= 0
+                        ? "text-green"
+                        : "text-red"
                     )}
                   >
-                    {formatCurrency(details.profit_total ?? 0)}
+                    {formatCurrency(profitOnAccount(details.profit_total ?? 0, details.balance))}
                   </p>
                 </div>
                 <div className="rounded-lg border border-border p-3 col-span-2 sm:col-span-1">

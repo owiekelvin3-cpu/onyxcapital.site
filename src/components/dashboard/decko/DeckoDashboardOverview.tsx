@@ -40,6 +40,7 @@ type Props = {
   signalPct?: number;
   signalPlanName?: string | null;
   signalExpiresAt?: string | null;
+  kycVerified?: boolean;
 };
 
 const QUICK_ACTIONS = [
@@ -262,6 +263,7 @@ export function DeckoDashboardOverview({
   marketPairs: _marketPairs,
   signalPct = 0,
   signalPlanName,
+  kycVerified = false,
 }: Props) {
   const firstName = displayName.split(" ")[0] || displayName || "Trader";
   const initial = (displayName || userEmail || "U").charAt(0).toUpperCase();
@@ -289,8 +291,17 @@ export function DeckoDashboardOverview({
       {/* Header */}
       <div className="flex flex-col gap-2 sm:gap-3 lg:mb-2 lg:flex-row lg:items-center lg:justify-between">
         <div className="min-w-0">
-          <h1 className="truncate text-xl font-bold text-text-primary sm:text-2xl lg:text-3xl">
-            Hello, {firstName}!
+          <h1 className="flex min-w-0 items-center gap-2 text-xl font-bold text-text-primary sm:text-2xl lg:text-3xl">
+            <span className="truncate">Hello, {firstName}!</span>
+            {kycVerified && (
+              <span
+                className="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[#1d9bf0] text-[10px] font-bold leading-none text-white shadow-sm sm:h-6 sm:w-6 sm:text-xs"
+                title="Identity verified"
+                aria-label="Identity verified"
+              >
+                ✓
+              </span>
+            )}
           </h1>
           <p className="mt-0.5 text-sm text-text-secondary lg:mt-1">
             Here&apos;s your trading overview
@@ -308,7 +319,17 @@ export function DeckoDashboardOverview({
               </span>
             )}
             <div className="hidden min-w-0 sm:block">
-              <p className="truncate text-sm font-semibold text-text-primary">{displayName || "Trader"}</p>
+              <p className="flex items-center gap-1.5 truncate text-sm font-semibold text-text-primary">
+                <span className="truncate">{displayName || "Trader"}</span>
+                {kycVerified && (
+                  <span
+                    className="inline-flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-[#1d9bf0] text-[9px] font-bold leading-none text-white"
+                    title="Identity verified"
+                  >
+                    ✓
+                  </span>
+                )}
+              </p>
               <p className="truncate text-xs text-text-secondary">{userEmail}</p>
             </div>
           </div>

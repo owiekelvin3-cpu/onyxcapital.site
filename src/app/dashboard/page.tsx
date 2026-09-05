@@ -8,6 +8,7 @@ import {
 import { getCachedLiveMarketPairs } from "@/lib/live-prices";
 import { chartFromTrades } from "@/lib/chart-data";
 import { DashboardOverview } from "@/components/dashboard/DashboardOverview";
+import { isKycApproved } from "@/lib/kyc";
 import { activeSignalPlanFromPackages, resolveDisplaySignalPct } from "@/lib/signal-plans";
 import type { SignalPackageRow } from "@/lib/supabase/types";
 
@@ -20,7 +21,7 @@ export default async function DashboardPage() {
   const { data: profile } = user
     ? await supabase
         .from("profiles")
-        .select("full_name, avatar_url, signal_pct")
+        .select("full_name, avatar_url, signal_pct, kyc_status")
         .eq("id", user.id)
         .maybeSingle()
     : { data: null };
@@ -79,6 +80,7 @@ export default async function DashboardPage() {
       signalPct={resolveDisplaySignalPct(Number(profile?.signal_pct ?? 0), signalPlan?.id)}
       signalPlanName={signalPlan?.name}
       signalExpiresAt={signalPlan?.expiresAt}
+      kycVerified={isKycApproved(profile)}
     />
   );
 }

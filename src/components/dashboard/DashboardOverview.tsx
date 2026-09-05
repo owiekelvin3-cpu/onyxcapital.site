@@ -18,6 +18,7 @@ type Props = {
   signalPct?: number;
   signalPlanName?: string | null;
   signalExpiresAt?: string | null;
+  kycVerified?: boolean;
 };
 
 export function DashboardOverview(props: Props) {

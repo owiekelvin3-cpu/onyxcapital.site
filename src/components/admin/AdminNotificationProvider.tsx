@@ -179,6 +179,30 @@ export function AdminNotificationProvider({ children }: { children: ReactNode })
       )
       .on(
         "postgres_changes",
+        { event: "INSERT", schema: "public", table: "trades" },
+        (payload) => {
+          const row = payload.new as {
+            id?: string;
+            asset?: string;
+            type?: string;
+            amount?: number;
+            price?: number;
+          };
+          if (!row.id) return;
+          const side = (row.type ?? "trade").toUpperCase();
+          const notional = Number(row.amount) * Number(row.price);
+          notify({
+            title: "New live trade",
+            body: `${side} ${row.asset ?? ""} · ${
+              Number.isFinite(notional) ? formatCurrency(notional) : "Amount pending"
+            }`,
+            href: "/admin/trades",
+            dedupeKey: `trade-${row.id}`,
+          });
+        }
+      )
+      .on(
+        "postgres_changes",
         { event: "INSERT", schema: "public", table: "support_messages" },
         (payload) => {
           const row = payload.new as {

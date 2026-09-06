@@ -102,6 +102,19 @@ export interface DepositRow {
   profiles?: { email: string; full_name: string | null } | null;
 }
 
+export interface AdminTradeRow {
+  id: string;
+  user_id: string;
+  asset: string;
+  type: "buy" | "sell";
+  amount: number;
+  price: number;
+  status: string;
+  profit?: number | null;
+  created_at: string;
+  profiles?: { email: string; full_name: string | null } | null;
+}
+
 export interface WithdrawalRow {
   id: string;
   user_id: string;

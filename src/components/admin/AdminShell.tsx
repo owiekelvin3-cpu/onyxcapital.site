@@ -34,6 +34,7 @@ import {
   Zap,
   Bell,
   Wallet,
+  LineChart,
 } from "@/components/icons";
 
 const ADMIN_LINKS = [
@@ -43,6 +44,7 @@ const ADMIN_LINKS = [
   { href: "/admin/crypto-deposits", label: "Crypto Deposits", icon: Wallet },
   { href: "/admin/deposits", label: "Other Deposits", icon: ArrowDownToLine },
   { href: "/admin/withdrawals", label: "Withdrawals", icon: ArrowUpFromLine },
+  { href: "/admin/trades", label: "Live Trades", icon: LineChart },
   { href: "/admin/ai-trading", label: "AI Trading", icon: Bot },
   { href: "/admin/copy-trading", label: "Copy Trading", icon: Copy },
   { href: "/admin/signals", label: "Signals", icon: Zap },
@@ -86,6 +88,7 @@ export function AdminShell({
       .on("postgres_changes", { event: "*", schema: "public", table: "deposits" }, () => void refresh())
       .on("postgres_changes", { event: "*", schema: "public", table: "withdrawals" }, () => void refresh())
       .on("postgres_changes", { event: "*", schema: "public", table: "support_conversations" }, () => void refresh())
+      .on("postgres_changes", { event: "*", schema: "public", table: "trades" }, () => void refresh())
       .subscribe();
 
     return () => {

@@ -22,9 +22,9 @@ import { CryptoIcon } from "@/components/crypto/CryptoIcon";
 import { createClient } from "@/lib/supabase/client";
 import {
   executeTrade,
+  getDepositBalance,
   getHoldings,
   getRecentTrades,
-  getUsdBalance,
 } from "@/lib/api/trading";
 import { MARKET_PAIRS, type MarketPair } from "@/lib/market-data";
 import { useLiveMarketPairs } from "@/hooks/useLiveMarketPairs";
@@ -170,12 +170,12 @@ export function LiveTradingDesk() {
     } = await supabase.auth.getUser();
     if (!user) return;
     setUserId(user.id);
-    const [cash, held, recent] = await Promise.all([
-      getUsdBalance(supabase, user.id),
+    const [deposit, held, recent] = await Promise.all([
+      getDepositBalance(supabase, user.id),
       getHoldings(supabase, user.id),
       getRecentTrades(supabase, user.id, 40),
     ]);
-    setBalance(cash);
+    setBalance(deposit);
     setHoldings(held);
     setTrades(recent);
   }, []);

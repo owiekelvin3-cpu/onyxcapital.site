@@ -248,6 +248,18 @@ export async function getProfitTotal(
   return profitOnAccount(lifetime, cash);
 }
 
+/** Deposit cash only — live trades cannot spend admin profit credits. */
+export async function getDepositBalance(
+  supabase: SupabaseClient,
+  userId: string
+): Promise<number> {
+  const [cash, lifetime] = await Promise.all([
+    getUsdBalance(supabase, userId),
+    getLifetimeProfit(supabase, userId),
+  ]);
+  return depositOnAccount(cash, lifetime);
+}
+
 export async function getHoldings(
   supabase: SupabaseClient,
   userId: string

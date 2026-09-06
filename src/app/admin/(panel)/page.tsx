@@ -14,6 +14,7 @@ import {
   RefreshCw,
   ChevronRight,
   Comments,
+  LineChart,
 } from "@/components/icons";
 
 const QUICK_LINKS = [
@@ -21,6 +22,7 @@ const QUICK_LINKS = [
   { href: "/admin/crypto-deposits", label: "Crypto Deposits", icon: ArrowDownToLine, statKey: "pendingCryptoDeposits" as const },
   { href: "/admin/deposits", label: "Other Deposits", icon: ArrowDownToLine, statKey: "pendingOtherDeposits" as const },
   { href: "/admin/withdrawals", label: "Withdrawals", icon: ArrowUpFromLine, statKey: "pendingWithdrawals" as const },
+  { href: "/admin/trades", label: "Live Trades", icon: LineChart, statKey: "recentTrades" as const },
   { href: "/admin/support", label: "Support", icon: Comments, statKey: null },
   { href: "/admin/users", label: "Users", icon: Users, statKey: "totalUsers" as const },
 ];

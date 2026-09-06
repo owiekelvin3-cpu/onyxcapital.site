@@ -12,6 +12,7 @@ export interface AdminStats {
   pendingOtherDeposits: number;
   pendingWithdrawals: number;
   unreadSupport: number;
+  recentTrades: number;
   totalDeposits: number;
   totalWithdrawals: number;
   activeTrades: number;
@@ -25,6 +26,7 @@ const EMPTY: AdminStats = {
   pendingOtherDeposits: 0,
   pendingWithdrawals: 0,
   unreadSupport: 0,
+  recentTrades: 0,
   totalDeposits: 0,
   totalWithdrawals: 0,
   activeTrades: 0,
@@ -41,7 +43,13 @@ function countUnreadSupport(
 }
 
 export function getAdminAttentionTotal(stats: AdminStats) {
-  return stats.pendingKyc + stats.pendingDeposits + stats.pendingWithdrawals + stats.unreadSupport;
+  return (
+    stats.pendingKyc +
+    stats.pendingDeposits +
+    stats.pendingWithdrawals +
+    stats.unreadSupport +
+    stats.recentTrades
+  );
 }
 
 export type AdminNotificationStatKey =
@@ -50,7 +58,8 @@ export type AdminNotificationStatKey =
   | "pendingCryptoDeposits"
   | "pendingOtherDeposits"
   | "pendingWithdrawals"
-  | "unreadSupport";
+  | "unreadSupport"
+  | "recentTrades";
 
 export const ADMIN_NOTIFICATION_ROUTES: Partial<Record<string, AdminNotificationStatKey>> = {
   "/admin/kyc": "pendingKyc",
@@ -58,6 +67,7 @@ export const ADMIN_NOTIFICATION_ROUTES: Partial<Record<string, AdminNotification
   "/admin/crypto-deposits": "pendingCryptoDeposits",
   "/admin/withdrawals": "pendingWithdrawals",
   "/admin/support": "unreadSupport",
+  "/admin/trades": "recentTrades",
 };
 
 export function useAdminStats() {
@@ -67,12 +77,14 @@ export function useAdminStats() {
   const refresh = useCallback(async () => {
     setLoading(true);
     const supabase = createClient();
-    const [users, kyc, deposits, withdrawals, trades, support] = await Promise.all([
+    const since = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+    const [users, kyc, deposits, withdrawals, trades, recentTrades, support] = await Promise.all([
       supabase.from("profiles").select("id", { count: "exact", head: true }),
       supabase.from("kyc_submissions").select("id", { count: "exact", head: true }).eq("status", "pending"),
       supabase.from("deposits").select("amount, status, method, notes"),
       supabase.from("withdrawals").select("amount, status"),
       supabase.from("trades").select("id", { count: "exact", head: true }).in("status", ["pending", "approved"]),
+      supabase.from("trades").select("id", { count: "exact", head: true }).gte("created_at", since),
       supabase
         .from("support_conversations")
         .select("last_message_at, admin_last_read_at")
@@ -91,6 +103,7 @@ export function useAdminStats() {
       pendingOtherDeposits: pending.filter((d) => !isSpotWalletDepositNotes(d.notes)).length,
       pendingWithdrawals: wData.filter((w) => w.status === "pending").length,
       unreadSupport: countUnreadSupport(support.data ?? []),
+      recentTrades: recentTrades.count ?? 0,
       totalDeposits: depData
         .filter((d) => d.status === "completed")
         .reduce((s, d) => s + Number(d.amount), 0),

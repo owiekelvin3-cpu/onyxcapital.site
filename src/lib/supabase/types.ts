@@ -114,6 +114,7 @@ export type NotificationRow = {
   message: string;
   read: boolean;
   created_at: string;
+  kind?: string | null;
 };
 
 export type TransactionKind = "deposit" | "withdrawal" | "trade";

@@ -15,17 +15,19 @@ import {
   ChevronRight,
   Comments,
   LineChart,
+  Bell,
 } from "@/components/icons";
 
 const QUICK_LINKS = [
-  { href: "/admin/kyc", label: "KYC Review", icon: FileCheck, statKey: "pendingKyc" as const },
-  { href: "/admin/crypto-deposits", label: "Crypto Deposits", icon: ArrowDownToLine, statKey: "pendingCryptoDeposits" as const },
-  { href: "/admin/deposits", label: "Other Deposits", icon: ArrowDownToLine, statKey: "pendingOtherDeposits" as const },
-  { href: "/admin/withdrawals", label: "Withdrawals", icon: ArrowUpFromLine, statKey: "pendingWithdrawals" as const },
-  { href: "/admin/trades", label: "Live Trades", icon: LineChart, statKey: "recentTrades" as const },
-  { href: "/admin/support", label: "Support", icon: Comments, statKey: null },
-  { href: "/admin/users", label: "Users", icon: Users, statKey: "totalUsers" as const },
-];
+  { href: "/admin/kyc", label: "KYC Review", icon: FileCheck, statKey: "pendingKyc" as const, hint: null },
+  { href: "/admin/crypto-deposits", label: "Crypto Deposits", icon: ArrowDownToLine, statKey: "pendingCryptoDeposits" as const, hint: null },
+  { href: "/admin/deposits", label: "Other Deposits", icon: ArrowDownToLine, statKey: "pendingOtherDeposits" as const, hint: null },
+  { href: "/admin/withdrawals", label: "Withdrawals", icon: ArrowUpFromLine, statKey: "pendingWithdrawals" as const, hint: null },
+  { href: "/admin/trades", label: "Live Trades", icon: LineChart, statKey: "recentTrades" as const, hint: null },
+  { href: "/admin/notifications", label: "User popups", icon: Bell, statKey: null, hint: "Send on-screen alerts" },
+  { href: "/admin/support", label: "Support", icon: Comments, statKey: null, hint: "Live customer messages" },
+  { href: "/admin/users", label: "Users", icon: Users, statKey: "totalUsers" as const, hint: null },
+] as const;
 
 export default function AdminOverviewPage() {
   const { stats, loading, refresh } = useAdminStats();
@@ -106,11 +108,13 @@ export default function AdminOverviewPage() {
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium text-text-primary">{link.label}</p>
                   <p className="text-xs text-text-tertiary">
-                    {link.statKey
-                      ? loading
-                        ? "—"
-                        : `${stats[link.statKey]} total`
-                      : "Live customer messages"}
+                    {link.hint
+                      ? link.hint
+                      : link.statKey
+                        ? loading
+                          ? "—"
+                          : `${stats[link.statKey]} total`
+                        : ""}
                   </p>
                 </div>
                 <ChevronRight className="w-4 h-4 text-text-tertiary" />

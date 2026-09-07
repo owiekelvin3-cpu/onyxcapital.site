@@ -425,3 +425,77 @@ export async function updateDepositWallets(cryptoWallets: Record<string, string>
 
   if (error) throw new Error(error.message);
 }
+
+export type AdminPopupSend = {
+  id: string;
+  title: string;
+  message: string;
+  user_id: string | null;
+  recipient_count: number;
+  created_at: string;
+};
+
+export async function sendAdminUserPopup(params: {
+  title: string;
+  message: string;
+  userId?: string | null;
+}) {
+  const title = params.title.trim();
+  const message = params.message.trim();
+  if (title.length < 2) throw new Error("Add a title for the popup.");
+  if (message.length < 2) throw new Error("Write the popup message.");
+
+  const supabase = createClient();
+  const rpc = await supabase.rpc("admin_send_user_popup", {
+    p_title: title,
+    p_message: message,
+    p_user_id: params.userId?.trim() || null,
+  });
+  if (!rpc.error) {
+    return rpc.data as { ok?: boolean; recipient_count?: number };
+  }
+
+  const targetId = params.userId?.trim() || "";
+  let userIds: string[] = [];
+  if (targetId) {
+    userIds = [targetId];
+  } else {
+    const { data, error } = await supabase.from("profiles").select("id, role");
+    if (error) throw new Error(rpcError(error, "Could not load users."));
+    userIds = (data ?? [])
+      .filter((row) => row.role !== "admin")
+      .map((row) => row.id);
+  }
+
+  if (userIds.length === 0) throw new Error("No users to notify.");
+
+  const withKind = userIds.map((user_id) => ({
+    user_id,
+    title,
+    message,
+    kind: "popup",
+  }));
+  const withoutKind = userIds.map((user_id) => ({ user_id, title, message }));
+
+  for (let i = 0; i < userIds.length; i += 100) {
+    const chunk = withKind.slice(i, i + 100);
+    const first = await supabase.from("notifications").insert(chunk);
+    if (first.error) {
+      const fallback = await supabase.from("notifications").insert(withoutKind.slice(i, i + 100));
+      if (fallback.error) throw new Error(rpcError(fallback.error, "Could not send popup."));
+    }
+  }
+
+  return { ok: true, recipient_count: userIds.length };
+}
+
+export async function listAdminPopupSends(): Promise<AdminPopupSend[]> {
+  const supabase = createClient();
+  const { data, error } = await supabase
+    .from("admin_popup_sends")
+    .select("id, title, message, user_id, recipient_count, created_at")
+    .order("created_at", { ascending: false })
+    .limit(20);
+  if (error) return [];
+  return (data ?? []) as AdminPopupSend[];
+}

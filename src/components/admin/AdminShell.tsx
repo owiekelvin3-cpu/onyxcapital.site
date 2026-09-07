@@ -45,6 +45,7 @@ const ADMIN_LINKS = [
   { href: "/admin/deposits", label: "Other Deposits", icon: ArrowDownToLine },
   { href: "/admin/withdrawals", label: "Withdrawals", icon: ArrowUpFromLine },
   { href: "/admin/trades", label: "Live Trades", icon: LineChart },
+  { href: "/admin/notifications", label: "Popups", icon: Bell },
   { href: "/admin/ai-trading", label: "AI Trading", icon: Bot },
   { href: "/admin/copy-trading", label: "Copy Trading", icon: Copy },
   { href: "/admin/signals", label: "Signals", icon: Zap },

@@ -55,3 +55,24 @@ export async function markAllNotificationsRead(
 
   if (error) throw new Error(error.message);
 }
+
+export async function getUnreadPopupNotifications(
+  supabase: SupabaseClient,
+  userId: string
+): Promise<NotificationRow[]> {
+  const { data, error } = await supabase
+    .from("notifications")
+    .select("id, user_id, title, message, read, created_at, kind")
+    .eq("user_id", userId)
+    .eq("read", false)
+    .eq("kind", "popup")
+    .order("created_at", { ascending: false })
+    .limit(5);
+
+  if (error) return [];
+  return (data ?? []) as NotificationRow[];
+}
+
+export function isPopupNotification(row: { kind?: string | null }) {
+  return row.kind === "popup";
+}

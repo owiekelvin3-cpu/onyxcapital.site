@@ -5,14 +5,27 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useTranslation } from "react-i18next";
 import { createClient } from "@/lib/supabase/client";
-import { getUserNotifications } from "@/lib/api/notifications";
+import {
+  getUnreadPopupNotifications,
+  getUserNotifications,
+  isPopupNotification,
+  markNotificationRead,
+} from "@/lib/api/notifications";
 import type { NotificationRow } from "@/lib/supabase/types";
 import { alertNewNotification } from "@/lib/notifications/alert";
 import { setupNotificationAudioUnlock } from "@/lib/notifications/sound";
+import { useBodyScrollLock } from "@/hooks/useBodyScrollLock";
 import { Bell, X } from "@/components/icons";
+import { Button } from "@/components/ui/Button";
 import { cn } from "@/lib/utils";
 
 type ToastState = {
+  id: string;
+  title: string;
+  message: string;
+};
+
+type PopupState = {
   id: string;
   title: string;
   message: string;
@@ -29,6 +42,11 @@ export function NotificationProvider({
   const { t } = useTranslation();
   const seenIds = useRef(new Set<string>());
   const [toast, setToast] = useState<ToastState | null>(null);
+  const [popup, setPopup] = useState<PopupState | null>(null);
+  const [popupQueue, setPopupQueue] = useState<PopupState[]>([]);
+  const popupRef = useRef<PopupState | null>(null);
+  popupRef.current = popup;
+  useBodyScrollLock(Boolean(popup));
 
   useEffect(() => {
     setupNotificationAudioUnlock();
@@ -40,9 +58,21 @@ export function NotificationProvider({
     const supabase = createClient();
     let cancelled = false;
 
-    void getUserNotifications(supabase, userId).then((items) => {
+    void Promise.all([
+      getUserNotifications(supabase, userId),
+      getUnreadPopupNotifications(supabase, userId),
+    ]).then(([items, unreadPopups]) => {
       if (cancelled) return;
       items.forEach((item) => seenIds.current.add(item.id));
+      if (unreadPopups.length > 0) {
+        const [first, ...rest] = unreadPopups.map((row) => ({
+          id: row.id,
+          title: row.title,
+          message: row.message,
+        }));
+        setPopup(first);
+        setPopupQueue(rest);
+      }
     });
 
     const channel = supabase
@@ -63,6 +93,17 @@ export function NotificationProvider({
           alertNewNotification(row, {
             onClick: () => router.push("/dashboard/notifications"),
           });
+
+          if (isPopupNotification(row)) {
+            const next = { id: row.id, title: row.title, message: row.message };
+            if (popupRef.current) {
+              setPopupQueue((queue) => [...queue, next]);
+            } else {
+              setPopup(next);
+            }
+            return;
+          }
+
           setToast({ id: row.id, title: row.title, message: row.message });
         }
       )
@@ -80,10 +121,23 @@ export function NotificationProvider({
     return () => window.clearTimeout(timer);
   }, [toast]);
 
+  async function dismissPopup() {
+    if (!popup) return;
+    const supabase = createClient();
+    try {
+      await markNotificationRead(supabase, popup.id);
+    } catch {
+      /* still close so the user is not stuck */
+    }
+    const [next, ...rest] = popupQueue;
+    setPopup(next ?? null);
+    setPopupQueue(rest);
+  }
+
   return (
     <>
       {children}
-      {toast && (
+      {toast && !popup && (
         <div
           className={cn(
             "pointer-events-none fixed inset-x-0 top-[calc(4.25rem+var(--safe-top))] z-[70] flex justify-center px-3",
@@ -117,6 +171,33 @@ export function NotificationProvider({
             >
               <X className="h-4 w-4" />
             </button>
+          </div>
+        </div>
+      )}
+      {popup && (
+        <div className="fixed inset-0 z-[90] flex items-end justify-center bg-black/65 p-4 backdrop-blur-sm sm:items-center">
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="team-popup-title"
+            className="w-full max-w-md overflow-hidden rounded-t-3xl border border-border bg-bg-secondary shadow-2xl sm:rounded-2xl"
+          >
+            <div className="border-b border-border px-5 py-4">
+              <p className="text-[11px] font-semibold uppercase tracking-wider text-brand">Onyx Capital</p>
+              <h2 id="team-popup-title" className="mt-1 text-lg font-bold text-text-primary">
+                {popup.title}
+              </h2>
+            </div>
+            <div className="px-5 py-4">
+              <p className="whitespace-pre-wrap text-sm leading-relaxed text-text-secondary">
+                {popup.message}
+              </p>
+            </div>
+            <div className="border-t border-border px-5 py-4">
+              <Button className="w-full" onClick={() => void dismissPopup()}>
+                Got it
+              </Button>
+            </div>
           </div>
         </div>
       )}

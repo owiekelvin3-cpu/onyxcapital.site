@@ -130,34 +130,123 @@ export async function adjustAdminMemeCoinProfit(params: {
   };
 }
 
+export function parsePositiveUsdAmount(raw: string | number) {
+  const n = typeof raw === "number" ? raw : Number(String(raw).replace(/,/g, "").trim());
+  if (!Number.isFinite(n)) {
+    throw new Error("Enter a valid amount greater than zero.");
+  }
+  if (n <= 0) {
+    throw new Error("Amount must be greater than zero.");
+  }
+  const rounded = Math.round(n * 100) / 100;
+  if (rounded <= 0) {
+    throw new Error("Amount must be greater than zero.");
+  }
+  if (rounded > 99_999_999.99) {
+    throw new Error("Amount is too large.");
+  }
+  return rounded;
+}
+
+export function depositOriginalAmount(row: { amount: number; original_amount?: number | null }) {
+  const original = Number(row.original_amount);
+  if (Number.isFinite(original) && original > 0) return original;
+  return Number(row.amount) || 0;
+}
+
+export function depositAmountWasCorrected(row: { amount: number; original_amount?: number | null }) {
+  return Math.round(depositOriginalAmount(row) * 100) !== Math.round(Number(row.amount) * 100);
+}
+
+export async function correctDepositAmount(depositId: string, amountInput: string | number) {
+  const amount = parsePositiveUsdAmount(amountInput);
+  const supabase = createClient();
+  const rpc = await supabase.rpc("admin_correct_deposit_amount", {
+    p_deposit_id: depositId,
+    p_amount: amount,
+  });
+  if (!rpc.error) {
+    return rpc.data as {
+      ok?: boolean;
+      amount?: number;
+      original_amount?: number;
+      previous_amount?: number;
+    };
+  }
+
+  if (!isMissingRpc(rpc.error.message ?? "")) {
+    throw new Error(rpcError(rpc.error, "Could not update deposit amount."));
+  }
+
+  const { data: row, error: loadErr } = await supabase
+    .from("deposits")
+    .select("id, amount, original_amount, status")
+    .eq("id", depositId)
+    .maybeSingle();
+  if (loadErr) throw new Error(rpcError(loadErr, "Could not update deposit amount."));
+  if (!row) throw new Error("Deposit not found.");
+  if (row.status !== "pending") throw new Error("Only pending deposits can be edited.");
+
+  const original = depositOriginalAmount(row);
+  const { data: userData } = await supabase.auth.getUser();
+  const payload: Record<string, unknown> = {
+    amount,
+    amount_corrected_at: new Date().toISOString(),
+    amount_corrected_by: userData.user?.id ?? null,
+  };
+
+  let { error } = await supabase
+    .from("deposits")
+    .update({ ...payload, original_amount: original })
+    .eq("id", depositId)
+    .eq("status", "pending");
+
+  if (error && /column|schema cache|does not exist/i.test(error.message)) {
+    ({ error } = await supabase.from("deposits").update({ amount }).eq("id", depositId).eq("status", "pending"));
+  }
+  if (error) throw new Error(rpcError(error, "Could not update deposit amount."));
+
+  return { ok: true, amount, original_amount: original, previous_amount: Number(row.amount) };
+}
+
 export async function approveDeposit(
   depositId: string,
-  userId: string,
-  amount: number,
+  userId?: string,
+  amount?: number,
   method?: string
 ) {
   const supabase = createClient();
 
-  let depositMethod = method;
-  const { data: depositRow } = await supabase
+  const { data: depositRow, error: loadErr } = await supabase
     .from("deposits")
-    .select("method, notes")
+    .select("user_id, amount, method, notes, status")
     .eq("id", depositId)
     .maybeSingle();
-
-  if (!depositMethod) {
-    depositMethod = depositRow?.method ?? undefined;
+  if (loadErr) throw loadErr;
+  if (!depositRow) throw new Error("Deposit not found.");
+  if (depositRow.status !== "pending") {
+    throw new Error("This deposit is no longer pending.");
   }
 
-  const depositNotes = depositRow?.notes;
+  const creditedUserId = depositRow.user_id || userId;
+  if (!creditedUserId) throw new Error("Deposit is missing a user.");
+
+  const creditedAmount = parsePositiveUsdAmount(depositRow.amount ?? amount ?? 0);
+  const depositMethod = method ?? depositRow.method ?? undefined;
+
+  const depositNotes = depositRow.notes;
   const cryptoAsset = depositMethod ? SPOT_DEPOSIT_METHOD_ASSET[depositMethod] : undefined;
   const spotWalletDeposit = isSpotWalletDepositNotes(depositNotes);
 
-  const { error: depErr } = await supabase
+  const { data: completed, error: depErr } = await supabase
     .from("deposits")
     .update({ status: "completed" as TransactionStatus })
-    .eq("id", depositId);
+    .eq("id", depositId)
+    .eq("status", "pending")
+    .select("id")
+    .maybeSingle();
   if (depErr) throw depErr;
+  if (!completed) throw new Error("This deposit is no longer pending.");
 
   if (cryptoAsset && spotWalletDeposit) {
     const priceRes = await fetch("/api/prices");
@@ -169,17 +258,17 @@ export async function approveDeposit(
       throw new Error(`Could not price ${cryptoAsset} deposit for wallet credit.`);
     }
 
-    const quantity = amount / unitPrice;
+    const quantity = creditedAmount / unitPrice;
     const { data: existing } = await supabase
       .from("holdings")
       .select("quantity")
-      .eq("user_id", userId)
+      .eq("user_id", creditedUserId)
       .eq("asset", cryptoAsset)
       .maybeSingle();
 
     const newQty = Number(existing?.quantity ?? 0) + quantity;
     const { error: holdErr } = await supabase.from("holdings").upsert(
-      { user_id: userId, asset: cryptoAsset, quantity: newQty },
+      { user_id: creditedUserId, asset: cryptoAsset, quantity: newQty },
       { onConflict: "user_id,asset" }
     );
     if (holdErr) throw holdErr;
@@ -188,25 +277,26 @@ export async function approveDeposit(
       p_deposit_id: depositId,
     });
     if (settleErr) throw settleErr;
-    return;
+    return { amount: creditedAmount };
   }
 
   const [{ data: bal }, { data: profile }] = await Promise.all([
-    supabase.from("balances").select("amount, currency").eq("user_id", userId).single(),
-    supabase.from("profiles").select("preferred_currency").eq("id", userId).single(),
+    supabase.from("balances").select("amount, currency").eq("user_id", creditedUserId).single(),
+    supabase.from("profiles").select("preferred_currency").eq("id", creditedUserId).single(),
   ]);
 
   const currency = bal?.currency || profile?.preferred_currency || "USD";
-  const newAmount = (bal?.amount ?? 0) + amount;
+  const newAmount = (bal?.amount ?? 0) + creditedAmount;
   const { error: balErr } = await supabase
     .from("balances")
-    .upsert({ user_id: userId, amount: newAmount, currency }, { onConflict: "user_id" });
+    .upsert({ user_id: creditedUserId, amount: newAmount, currency }, { onConflict: "user_id" });
   if (balErr) throw balErr;
 
   const { error: settleErr } = await supabase.rpc("settle_pending_fees_from_deposit", {
     p_deposit_id: depositId,
   });
   if (settleErr) throw settleErr;
+  return { amount: creditedAmount };
 }
 
 export async function rejectDeposit(depositId: string, reason: string) {

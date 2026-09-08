@@ -31,6 +31,8 @@ export type DepositRow = {
   id: string;
   user_id: string;
   amount: number;
+  original_amount?: number | null;
+  amount_corrected_at?: string | null;
   currency: string;
   method: string;
   status: string;

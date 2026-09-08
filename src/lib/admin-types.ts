@@ -94,6 +94,9 @@ export interface DepositRow {
   id: string;
   user_id: string;
   amount: number;
+  original_amount?: number | null;
+  amount_corrected_at?: string | null;
+  amount_corrected_by?: string | null;
   method: string;
   status: TransactionStatus;
   notes: string | null;

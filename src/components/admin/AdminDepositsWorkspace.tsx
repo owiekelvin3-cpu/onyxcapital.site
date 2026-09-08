@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
-import { approveDeposit, rejectDeposit } from "@/lib/admin-api";
+import { approveDeposit, correctDepositAmount, depositAmountWasCorrected, depositOriginalAmount, rejectDeposit } from "@/lib/admin-api";
 import type { DepositRow } from "@/lib/admin-types";
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 import { AdminFilterBar, AdminListActions } from "@/components/admin/AdminFilterBar";
@@ -75,14 +75,39 @@ export function AdminDepositsWorkspace({
     setActing(d.id);
     setMessage("");
     try {
-      await approveDeposit(d.id, d.user_id, d.amount, d.method);
-      setMessage(`Approved ${formatCurrency(d.amount)}`);
+      const result = await approveDeposit(d.id, d.user_id, d.amount, d.method);
+      const credited = Number(result.amount ?? d.amount);
+      const original = depositOriginalAmount(d);
+      setMessage(
+        depositAmountWasCorrected({ amount: credited, original_amount: original })
+          ? `Approved ${formatCurrency(credited)} (requested ${formatCurrency(original)})`
+          : `Approved ${formatCurrency(credited)}`
+      );
       closeDetail();
       await load();
     } catch (e) {
       setMessage(e instanceof Error ? e.message : "Action failed");
     }
     setActing(null);
+  }
+
+  async function handleCorrectAmount(d: DepositRow, nextAmount: number) {
+    setActing(d.id);
+    setMessage("");
+    try {
+      const result = await correctDepositAmount(d.id, nextAmount);
+      const credited = Number(result.amount ?? nextAmount);
+      const original = Number(result.original_amount ?? depositOriginalAmount(d));
+      setMessage(
+        `Amount updated to ${formatCurrency(credited)}. Requested ${formatCurrency(original)}. This is what will be credited on approval.`
+      );
+      await load();
+    } catch (e) {
+      setMessage(e instanceof Error ? e.message : "Could not update amount");
+      throw e;
+    } finally {
+      setActing(null);
+    }
   }
 
   async function handleReject(reason: string) {
@@ -182,6 +207,11 @@ export function AdminDepositsWorkspace({
                           <div className="flex flex-wrap items-center gap-2">
                             <span className="font-semibold text-text-primary">{formatCurrency(d.amount)}</span>
                             <StatusBadge status={d.status} />
+                            {depositAmountWasCorrected(d) && (
+                              <span className="rounded-full border border-brand/30 bg-brand/10 px-2 py-0.5 text-[10px] font-semibold uppercase text-brand">
+                                Corrected
+                              </span>
+                            )}
                             {hasImages && (
                               <span className="rounded-full border border-brand/30 bg-brand/10 px-2 py-0.5 text-[10px] font-semibold uppercase text-brand">
                                 Has images
@@ -191,6 +221,11 @@ export function AdminDepositsWorkspace({
                           <p className="text-sm text-text-tertiary mt-1">
                             {userLabel} · {formatDepositMethod(d.method)} · {formatDate(d.created_at)}
                           </p>
+                          {depositAmountWasCorrected(d) && (
+                            <p className="mt-1 text-xs text-text-tertiary">
+                              Requested {formatCurrency(depositOriginalAmount(d))}
+                            </p>
+                          )}
                           {d.status === "rejected" && d.rejection_reason && (
                             <p className="mt-1 text-xs text-red line-clamp-2">
                               Reason: {d.rejection_reason}
@@ -257,6 +292,8 @@ export function AdminDepositsWorkspace({
               deposit={selected}
               onClose={closeDetail}
               actions={renderDetailActions(selected)}
+              correcting={acting === selected.id}
+              onCorrectAmount={(amount) => handleCorrectAmount(selected, amount)}
             />
           </div>
         )}
@@ -278,6 +315,8 @@ export function AdminDepositsWorkspace({
             deposit={selected}
             onClose={closeDetail}
             actions={renderDetailActions(selected)}
+            correcting={acting === selected.id}
+            onCorrectAmount={(amount) => handleCorrectAmount(selected, amount)}
           />
         )}
       </AdminMobilePanel>

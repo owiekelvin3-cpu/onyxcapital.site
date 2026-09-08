@@ -2,15 +2,17 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Copy, Check, ExternalLink, X, ZoomIn, ImageIcon } from "@/components/icons";
-import { StatusBadge } from "@/components/admin/StatusBadge";
+import { Copy, Check, ExternalLink, X, ZoomIn, ImageIcon, Pencil } from "@/components/icons";
+import { StatusBadge, isPending } from "@/components/admin/StatusBadge";
 import { Button } from "@/components/ui/Button";
+import { Input } from "@/components/ui/Input";
 import { formatDepositMethod } from "@/lib/deposit-options";
 import {
   getGiftCardBrandFromMethod,
   parseDepositNotes,
 } from "@/lib/deposit-details";
 import { createKycDocumentSignedUrl } from "@/lib/kyc";
+import { depositAmountWasCorrected, depositOriginalAmount, parsePositiveUsdAmount } from "@/lib/admin-api";
 import type { DepositRow } from "@/lib/admin-types";
 import { formatCurrency, formatDate, cn } from "@/lib/utils";
 
@@ -147,16 +149,45 @@ export function AdminDepositDetailPanel({
   deposit,
   onClose,
   actions,
+  onCorrectAmount,
+  correcting,
 }: {
   deposit: DepositRow;
   onClose: () => void;
   actions?: React.ReactNode;
+  onCorrectAmount?: (amount: number) => Promise<void>;
+  correcting?: boolean;
 }) {
   const { t } = useTranslation();
   const [lightbox, setLightbox] = useState<string | null>(null);
+  const [editingAmount, setEditingAmount] = useState(false);
+  const [amountDraft, setAmountDraft] = useState(String(deposit.amount));
+  const [amountError, setAmountError] = useState("");
   const meta = parseDepositNotes(deposit.notes, deposit.method);
   const methodLabel = formatDepositMethod(deposit.method);
   const giftBrand = getGiftCardBrandFromMethod(deposit.method);
+  const originalAmount = depositOriginalAmount(deposit);
+  const corrected = depositAmountWasCorrected(deposit);
+  const pending = isPending(deposit.status);
+  const canEditAmount = pending && Boolean(onCorrectAmount);
+
+  useEffect(() => {
+    setEditingAmount(false);
+    setAmountDraft(String(deposit.amount));
+    setAmountError("");
+  }, [deposit.id, deposit.amount]);
+
+  async function saveAmount() {
+    if (!onCorrectAmount) return;
+    setAmountError("");
+    try {
+      const next = parsePositiveUsdAmount(amountDraft);
+      await onCorrectAmount(next);
+      setEditingAmount(false);
+    } catch (error) {
+      setAmountError(error instanceof Error ? error.message : t("admin.amountInvalid"));
+    }
+  }
 
   return (
     <>
@@ -174,6 +205,11 @@ export function AdminDepositDetailPanel({
             <div className="min-w-0">
               <p className="text-lg font-semibold text-text-primary">{formatCurrency(deposit.amount)}</p>
               <p className="text-sm text-text-tertiary">{methodLabel}</p>
+              {corrected && (
+                <p className="mt-0.5 text-xs text-text-tertiary">
+                  {t("admin.amountCorrectedFrom", { original: formatCurrency(originalAmount) })}
+                </p>
+              )}
               {giftBrand && <p className="mt-0.5 text-xs text-text-tertiary">{giftBrand.fullName}</p>}
             </div>
           </div>
@@ -204,7 +240,26 @@ export function AdminDepositDetailPanel({
             }
           />
           <DetailRow label={t("admin.method")} value={methodLabel} />
-          <DetailRow label={t("admin.amount")} value={formatCurrency(deposit.amount)} />
+          <DetailRow
+            label={t("admin.requestedAmount")}
+            value={formatCurrency(originalAmount)}
+          />
+          <DetailRow
+            label={pending ? t("admin.creditAmount") : t("admin.creditedAmount")}
+            value={
+              <span className="inline-flex flex-wrap items-center gap-2">
+                <span>{formatCurrency(deposit.amount)}</span>
+                {corrected && (
+                  <span className="rounded-full border border-brand/30 bg-brand/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-brand">
+                    {t("admin.amountCorrectedBadge")}
+                  </span>
+                )}
+              </span>
+            }
+          />
+          {deposit.amount_corrected_at && (
+            <DetailRow label={t("admin.amountCorrectedAt")} value={formatDate(deposit.amount_corrected_at)} />
+          )}
           <DetailRow label={t("admin.submitted")} value={formatDate(deposit.created_at)} />
 
           {deposit.status === "rejected" && deposit.rejection_reason && (
@@ -224,6 +279,73 @@ export function AdminDepositDetailPanel({
             <DetailRow label={t("admin.txHash")} value={<CopyableValue value={meta.txHash} />} />
           )}
         </dl>
+
+        {canEditAmount && (
+          <div className="mt-5 rounded-xl border border-border bg-bg-primary/50 p-4">
+            {editingAmount ? (
+              <div className="space-y-3">
+                <Input
+                  id="deposit-actual-amount"
+                  label={t("admin.actualAmountReceived")}
+                  type="number"
+                  inputMode="decimal"
+                  min={0.01}
+                  step="0.01"
+                  value={amountDraft}
+                  error={amountError}
+                  onKeyDown={(e) => {
+                    if (["e", "E", "+", "-"].includes(e.key)) e.preventDefault();
+                  }}
+                  onChange={(e) => {
+                    setAmountDraft(e.target.value);
+                    setAmountError("");
+                  }}
+                />
+                <p className="text-xs text-text-tertiary">{t("admin.amountWillCredit")}</p>
+                <div className="flex flex-wrap gap-2">
+                  <Button
+                    type="button"
+                    size="sm"
+                    disabled={correcting}
+                    onClick={() => void saveAmount()}
+                  >
+                    {correcting ? t("admin.saving") : t("admin.saveAmount")}
+                  </Button>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    disabled={correcting}
+                    onClick={() => {
+                      setEditingAmount(false);
+                      setAmountDraft(String(deposit.amount));
+                      setAmountError("");
+                    }}
+                  >
+                    {t("common.cancel")}
+                  </Button>
+                </div>
+              </div>
+            ) : (
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <p className="text-xs text-text-tertiary">{t("admin.amountWillCredit")}</p>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  onClick={() => {
+                    setAmountDraft(String(deposit.amount));
+                    setAmountError("");
+                    setEditingAmount(true);
+                  }}
+                >
+                  <Pencil className="h-3.5 w-3.5" />
+                  {t("admin.editAmount")}
+                </Button>
+              </div>
+            )}
+          </div>
+        )}
 
         {meta.type === "gift_card" && (meta.frontImageUrl || meta.backImageUrl) && (
           <div className="mt-5 border-t border-border pt-5">

@@ -180,24 +180,25 @@ export async function correctDepositAmount(depositId: string, amountInput: strin
 
   const { data: row, error: loadErr } = await supabase
     .from("deposits")
-    .select("id, amount, original_amount, status")
+    .select("id, amount, status")
     .eq("id", depositId)
     .maybeSingle();
   if (loadErr) throw new Error(rpcError(loadErr, "Could not update deposit amount."));
   if (!row) throw new Error("Deposit not found.");
   if (row.status !== "pending") throw new Error("Only pending deposits can be edited.");
 
-  const original = depositOriginalAmount(row);
+  const original = Number(row.amount);
   const { data: userData } = await supabase.auth.getUser();
-  const payload: Record<string, unknown> = {
+  const withAudit: Record<string, unknown> = {
     amount,
+    original_amount: original,
     amount_corrected_at: new Date().toISOString(),
     amount_corrected_by: userData.user?.id ?? null,
   };
 
   let { error } = await supabase
     .from("deposits")
-    .update({ ...payload, original_amount: original })
+    .update(withAudit)
     .eq("id", depositId)
     .eq("status", "pending");
 
@@ -206,7 +207,7 @@ export async function correctDepositAmount(depositId: string, amountInput: strin
   }
   if (error) throw new Error(rpcError(error, "Could not update deposit amount."));
 
-  return { ok: true, amount, original_amount: original, previous_amount: Number(row.amount) };
+  return { ok: true, amount, original_amount: original, previous_amount: original };
 }
 
 export async function approveDeposit(

@@ -19,6 +19,37 @@ export type GiftCardBrand = {
   iconUrl: string;
 };
 
+export const CARD_NETWORKS: GiftCardBrand[] = [
+  {
+    id: "visa",
+    label: "Visa",
+    fullName: "Visa",
+    color: "#1A1F71",
+    iconUrl: "/gift-cards/visa.svg",
+  },
+  {
+    id: "mastercard",
+    label: "Mastercard",
+    fullName: "Mastercard",
+    color: "#EB001B",
+    iconUrl: "/gift-cards/mastercard.svg",
+  },
+  {
+    id: "amex",
+    label: "Amex",
+    fullName: "American Express",
+    color: "#016FD0",
+    iconUrl: "/cards/amex.svg",
+  },
+  {
+    id: "discover",
+    label: "Discover",
+    fullName: "Discover",
+    color: "#FF6000",
+    iconUrl: "/cards/discover.svg",
+  },
+];
+
 export const GIFT_CARD_BRANDS: GiftCardBrand[] = [
   {
     id: "apple",

@@ -26,7 +26,7 @@ export default function DepositHubPage() {
           href="/dashboard/deposit/card"
           title={t("deposits.cardTitle")}
           description={t("deposits.cardDesc")}
-          iconGrid={<CardDepositPreview />}
+          iconGrid={<CardDepositPreview size="lg" />}
         />
 
         <DepositMethodCard

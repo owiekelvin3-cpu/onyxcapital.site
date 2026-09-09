@@ -1,9 +1,14 @@
 "use client";
 
 import { useState } from "react";
-import { DEPOSIT_CRYPTO_KEYS, DEPOSIT_CRYPTO_LABELS, GIFT_CARD_BRANDS, type GiftCardBrand } from "@/lib/deposit-options";
+import {
+  CARD_NETWORKS,
+  DEPOSIT_CRYPTO_KEYS,
+  DEPOSIT_CRYPTO_LABELS,
+  GIFT_CARD_BRANDS,
+  type GiftCardBrand,
+} from "@/lib/deposit-options";
 import { CryptoIcon } from "@/components/crypto/CryptoIcon";
-import { CreditCard } from "@/components/icons";
 import { cn } from "@/lib/utils";
 
 type GiftCardIconSize = "sm" | "md" | "lg";
@@ -110,10 +115,51 @@ export function GiftCardDepositPreview({ size = "md" }: { size?: "md" | "lg" }) 
   );
 }
 
-export function CardDepositPreview() {
+export function CardNetworkTile({
+  network,
+  size = "sm",
+}: {
+  network: GiftCardBrand;
+  size?: GiftCardIconSize;
+}) {
+  const [failed, setFailed] = useState(false);
+
   return (
-    <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-brand/15 text-brand">
-      <CreditCard className="h-6 w-6" />
+    <span
+      className={cn(
+        "inline-flex shrink-0 items-center justify-center overflow-hidden rounded-xl bg-white shadow-sm ring-1 ring-black/5 dark:ring-white/10",
+        TILE_SIZE[size]
+      )}
+    >
+      {failed ? (
+        <span
+          className="flex h-full w-full items-center justify-center text-[9px] font-bold text-white"
+          style={{ backgroundColor: network.color }}
+        >
+          {network.label.slice(0, 2).toUpperCase()}
+        </span>
+      ) : (
+        <img
+          src={network.iconUrl}
+          alt={network.label}
+          loading="lazy"
+          decoding="async"
+          onError={() => setFailed(true)}
+          className="h-full w-full object-cover"
+        />
+      )}
     </span>
+  );
+}
+
+export function CardDepositPreview({ size = "md" }: { size?: "md" | "lg" }) {
+  const tileSize = size === "lg" ? "sm" : "sm";
+
+  return (
+    <div className={cn("grid shrink-0 grid-cols-2 gap-1.5", size === "lg" ? "w-[88px]" : "w-[76px]")}>
+      {CARD_NETWORKS.map((network) => (
+        <CardNetworkTile key={network.id} network={network} size={tileSize} />
+      ))}
+    </div>
   );
 }

@@ -16,7 +16,8 @@ import {
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
-import { ArrowLeft, Camera, CreditCard, Loader2, Shield } from "@/components/icons";
+import { CardDepositPreview } from "@/components/dashboard/deposit/DepositMethodIcons";
+import { ArrowLeft, Camera, Loader2, Shield } from "@/components/icons";
 
 export default function CardDepositPage() {
   const router = useRouter();
@@ -105,10 +106,8 @@ export default function CardDepositPage() {
       </div>
 
       <Card className="space-y-5">
-        <div className="flex items-start gap-3">
-          <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-brand/15 text-brand">
-            <CreditCard className="h-5 w-5" />
-          </span>
+        <div className="flex items-start gap-4">
+          <CardDepositPreview />
           <div>
             <h2 className="text-base font-semibold text-text-primary">{t("deposits.cardTitle")}</h2>
             <p className="mt-0.5 text-sm text-text-tertiary">{t("deposits.cardDesc")}</p>

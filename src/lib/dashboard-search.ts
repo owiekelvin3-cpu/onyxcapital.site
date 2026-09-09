@@ -45,6 +45,13 @@ export const DASHBOARD_SEARCH_ITEMS: DashboardSearchItem[] = [
     keywords: ["fund", "add money", "top up", "deposit"],
   },
   {
+    id: "deposit-card",
+    href: "/dashboard/deposit/card",
+    labelKey: "deposits.cardTitle",
+    groupKey: "dashboard.navGroupCash",
+    keywords: ["card", "credit", "debit", "visa", "mastercard", "deposit"],
+  },
+  {
     id: "deposit-crypto",
     href: "/dashboard/deposit/crypto",
     labelKey: "deposits.cryptoTitle",

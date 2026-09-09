@@ -122,6 +122,7 @@ export function getGiftCardBrand(brandId: string): GiftCardBrand | undefined {
 }
 
 export function formatDepositMethod(method: string): string {
+  if (method === "credit_card") return "Credit / Debit Card";
   if (method.startsWith("gift_card_")) {
     const brandId = method.replace("gift_card_", "");
     const brand = getGiftCardBrand(brandId);

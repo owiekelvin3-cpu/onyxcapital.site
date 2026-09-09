@@ -51,7 +51,7 @@ function matchesFilter(item: TransactionItem, filter: TxFilter) {
 
 function formatRowMethod(method: string | null | undefined) {
   if (!method) return "";
-  if (method.startsWith("crypto_") || method.startsWith("gift_card_")) {
+  if (method.startsWith("crypto_") || method.startsWith("gift_card_") || method === "credit_card") {
     return formatDepositMethod(method);
   }
   return method.replace(/_/g, " ");

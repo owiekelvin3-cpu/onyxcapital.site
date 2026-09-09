@@ -5,6 +5,7 @@ import { Shield } from "@/components/icons";
 import { Card } from "@/components/ui/Card";
 import { DepositMethodCard } from "@/components/dashboard/deposit/DepositMethodCard";
 import {
+  CardDepositPreview,
   CryptoDepositPreview,
   GiftCardDepositPreview,
 } from "@/components/dashboard/deposit/DepositMethodIcons";
@@ -21,6 +22,13 @@ export default function DepositHubPage() {
       </div>
 
       <Card className="space-y-4">
+        <DepositMethodCard
+          href="/dashboard/deposit/card"
+          title={t("deposits.cardTitle")}
+          description={t("deposits.cardDesc")}
+          iconGrid={<CardDepositPreview />}
+        />
+
         <DepositMethodCard
           href="/dashboard/deposit/crypto"
           title={t("deposits.cryptoTitle")}

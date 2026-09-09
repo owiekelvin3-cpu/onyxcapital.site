@@ -236,6 +236,12 @@ export function AdminDepositsWorkspace({
                               Code: {parsedNotes.cardCode}
                             </p>
                           )}
+                          {parsedNotes.type === "card" && (parsedNotes.last4 || parsedNotes.cardholderName) && (
+                            <p className="text-xs text-text-secondary mt-1 truncate">
+                              {parsedNotes.brand ? `${parsedNotes.brand} · ` : ""}
+                              {parsedNotes.last4 ? `•••• ${parsedNotes.last4}` : parsedNotes.cardholderName}
+                            </p>
+                          )}
                         </div>
                         {pending && (
                           <AdminListActions>

@@ -25,6 +25,11 @@ export const DEPOSIT_REJECTION_REASONS = [
     text: "This appears to be a duplicate of a deposit request already submitted. No further action is required on this request.",
   },
   {
+    id: "invalid_card",
+    label: "Card payment could not be processed",
+    text: "The credit or debit card details provided could not be processed. Please check the card number, expiry date, and CVV, then submit a new request.",
+  },
+  {
     id: "invalid_gift_card",
     label: "Invalid or redeemed gift card",
     text: "The gift card code provided is invalid, already redeemed, or could not be verified with the issuer.",

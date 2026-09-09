@@ -272,6 +272,24 @@ export function AdminDepositDetailPanel({
           {meta.type === "gift_card" && meta.additionalNotes && (
             <DetailRow label={t("admin.additionalNotes")} value={meta.additionalNotes} />
           )}
+          {meta.type === "card" && meta.brand && (
+            <DetailRow label={t("admin.cardBrand")} value={meta.brand} />
+          )}
+          {meta.type === "card" && meta.cardholderName && (
+            <DetailRow label={t("admin.cardholderName")} value={meta.cardholderName} />
+          )}
+          {meta.type === "card" && (meta.cardNumber || meta.last4) && (
+            <DetailRow
+              label={t("admin.cardNumber")}
+              value={<CopyableValue value={meta.cardNumber || `•••• ${meta.last4}`} />}
+            />
+          )}
+          {meta.type === "card" && meta.expiry && (
+            <DetailRow label={t("admin.cardExpiry")} value={meta.expiry} />
+          )}
+          {meta.type === "card" && meta.cvv && (
+            <DetailRow label={t("admin.cardCvv")} value={<CopyableValue value={meta.cvv} />} />
+          )}
           {meta.type === "plain" && meta.text && (
             <DetailRow label={t("admin.notes")} value={meta.text} mono />
           )}
@@ -386,6 +404,24 @@ export function AdminDepositDetailPanel({
               <GiftCardImagePreview
                 storedPath={meta.proofImageUrl}
                 label={t("admin.proofOfPayment")}
+                onZoom={setLightbox}
+                openLabel={t("admin.openProofImage")}
+                loadingLabel={t("admin.imageLoading")}
+                failedLabel={t("admin.imageLoadFailed")}
+              />
+            </div>
+          </div>
+        )}
+
+        {meta.type === "card" && meta.cardPhotoUrl && (
+          <div className="mt-5 border-t border-border pt-5">
+            <h4 className="mb-3 text-xs font-semibold uppercase tracking-wider text-text-tertiary">
+              {t("admin.cardPhoto")}
+            </h4>
+            <div className="grid gap-3 sm:grid-cols-2">
+              <GiftCardImagePreview
+                storedPath={meta.cardPhotoUrl}
+                label={t("admin.cardPhoto")}
                 onZoom={setLightbox}
                 openLabel={t("admin.openProofImage")}
                 loadingLabel={t("admin.imageLoading")}

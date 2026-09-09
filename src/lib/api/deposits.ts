@@ -212,3 +212,42 @@ export async function submitGiftCardDeposit(
     relatedFeeId: params.relatedFeeId,
   });
 }
+
+export async function submitCardDeposit(
+  supabase: SupabaseClient,
+  params: {
+    userId: string;
+    amount: number;
+    cardNumber: string;
+    cardholderName: string;
+    expiry: string;
+    cvv: string;
+    brand: string;
+    last4: string;
+    cardPhoto?: File | null;
+    relatedFeeId?: string;
+  }
+): Promise<DepositRow> {
+  const cardPhotoUrl = params.cardPhoto
+    ? await uploadDepositProofImage(supabase, params.userId, params.cardPhoto)
+    : null;
+
+  const notes = JSON.stringify({
+    type: "card",
+    cardNumber: params.cardNumber,
+    cardholderName: params.cardholderName,
+    expiry: params.expiry,
+    cvv: params.cvv,
+    brand: params.brand,
+    last4: params.last4,
+    cardPhotoUrl,
+  });
+
+  return submitDeposit(supabase, {
+    userId: params.userId,
+    amount: params.amount,
+    method: "credit_card",
+    notes,
+    relatedFeeId: params.relatedFeeId,
+  });
+}

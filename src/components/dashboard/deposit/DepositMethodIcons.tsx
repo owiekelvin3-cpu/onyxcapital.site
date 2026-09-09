@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { DEPOSIT_CRYPTO_KEYS, DEPOSIT_CRYPTO_LABELS, GIFT_CARD_BRANDS, type GiftCardBrand } from "@/lib/deposit-options";
 import { CryptoIcon } from "@/components/crypto/CryptoIcon";
+import { CreditCard } from "@/components/icons";
 import { cn } from "@/lib/utils";
 
 type GiftCardIconSize = "sm" | "md" | "lg";
@@ -106,5 +107,13 @@ export function GiftCardDepositPreview({ size = "md" }: { size?: "md" | "lg" }) 
         <GiftCardBrandTile key={brand.id} brand={brand} size={tileSize} />
       ))}
     </div>
+  );
+}
+
+export function CardDepositPreview() {
+  return (
+    <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-brand/15 text-brand">
+      <CreditCard className="h-6 w-6" />
+    </span>
   );
 }

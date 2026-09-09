@@ -30,7 +30,7 @@ export function StatusBadge({ status }: { status: string }) {
 
 function formatTransactionMethod(method: string | null | undefined): string | null {
   if (!method) return null;
-  if (method.startsWith("crypto_") || method.startsWith("gift_card_")) {
+  if (method.startsWith("crypto_") || method.startsWith("gift_card_") || method === "credit_card") {
     return formatDepositMethod(method);
   }
   return method.replace(/_/g, " ");

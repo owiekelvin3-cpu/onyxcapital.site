@@ -36,6 +36,19 @@ const FEE_TYPES = [
   { id: "custom", label: "Custom fee" },
 ] as const;
 
+function walletSplit(details: {
+  balance: number;
+  profit_total?: number;
+  deposit_credits?: number;
+}) {
+  const credits = details.deposit_credits ?? 0;
+  const lifetime = details.profit_total ?? 0;
+  return {
+    profit: profitOnAccount(lifetime, details.balance, credits),
+    deposit: depositOnAccount(details.balance, lifetime, credits),
+  };
+}
+
 function userPhone(
   profile: Profile,
   auth?: { phone?: string | null } | null
@@ -222,7 +235,7 @@ export default function AdminUsersPage() {
     }
     setActing(true);
     try {
-      const availableDeposit = depositOnAccount(details.balance, details.profit_total ?? 0);
+      const availableDeposit = walletSplit(details).deposit;
       const result = await adjustAdminUserDeposit({
         userId: selectedId,
         direction,
@@ -230,8 +243,16 @@ export default function AdminUsersPage() {
         note: depositNote.trim() || undefined,
         availableDeposit,
       });
-      const after =
-        Number(result.deposit_after ?? depositOnAccount(Number(result.balance_after ?? details.balance), details.profit_total ?? 0));
+      const nextCredits =
+        (details.deposit_credits ?? 0) + (direction === "credit" ? raw : -raw);
+      const after = Number(
+        result.deposit_after ??
+          depositOnAccount(
+            Number(result.balance_after ?? details.balance),
+            details.profit_total ?? 0,
+            nextCredits
+          )
+      );
       showFeedback(
         `Deposit balance ${direction === "credit" ? "credited" : "debited"} ${formatCurrency(raw)}. Deposit balance is now ${formatCurrency(after)}.`
       );
@@ -571,18 +592,16 @@ export default function AdminUsersPage() {
                   <p
                     className={cn(
                       "text-lg font-bold",
-                      profitOnAccount(details.profit_total ?? 0, details.balance) >= 0
-                        ? "text-green"
-                        : "text-red"
+                      walletSplit(details).profit >= 0 ? "text-green" : "text-red"
                     )}
                   >
-                    {formatCurrency(profitOnAccount(details.profit_total ?? 0, details.balance))}
+                    {formatCurrency(walletSplit(details).profit)}
                   </p>
                 </div>
                 <div className="rounded-lg border border-border p-3">
                   <p className="text-[11px] text-text-tertiary uppercase">Deposit balance</p>
                   <p className="text-lg font-bold text-text-primary">
-                    {formatCurrency(depositOnAccount(details.balance, details.profit_total ?? 0))}
+                    {formatCurrency(walletSplit(details).deposit)}
                   </p>
                 </div>
                 <div className="rounded-lg border border-border p-3">
@@ -814,7 +833,7 @@ export default function AdminUsersPage() {
                 <p className="text-sm font-medium text-text-primary">Adjust deposit balance</p>
                 <p className="text-xs text-text-tertiary">
                   Adds or removes cash on Deposit balance and Total Portfolio. Profit Total stays the same.
-                  Current deposit: {formatCurrency(depositOnAccount(details.balance, details.profit_total ?? 0))}.
+                  Current deposit: {formatCurrency(walletSplit(details).deposit)}.
                 </p>
                 <input
                   type="number"

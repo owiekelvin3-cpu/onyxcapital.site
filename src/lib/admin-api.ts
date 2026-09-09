@@ -17,7 +17,15 @@ export async function fetchAdminUserDetails(userId: string): Promise<AdminUserDe
   const supabase = createClient();
   const { data, error } = await supabase.rpc("admin_get_user_details", { p_user_id: userId });
   if (error) throw new Error(rpcError(error, "Could not load user details."));
-  return data as AdminUserDetails;
+  const details = data as AdminUserDetails;
+  const { data: credits } = await supabase
+    .from("user_deposit_adjustments")
+    .select("amount")
+    .eq("user_id", userId);
+  details.deposit_credits = Math.round(
+    (credits ?? []).reduce((sum, row) => sum + Number(row.amount ?? 0), 0) * 100
+  ) / 100;
+  return details;
 }
 
 export async function moderateAdminUser(params: {
@@ -138,15 +146,26 @@ export async function adjustAdminUserDeposit(params: {
     p_amount: amount,
     p_note: note ?? null,
   });
+  const signed = params.direction === "credit" ? amount : -amount;
+
   if (!rpc.error) {
-    return rpc.data as {
+    const result = rpc.data as {
       ok?: boolean;
       direction?: AdminBalanceDirection;
       amount?: number;
+      balance_before?: number;
       balance_after?: number;
       deposit_after?: number;
       reason?: string;
     };
+    await ensureDepositAdjustmentLedger(supabase, {
+      userId: params.userId,
+      signedAmount: signed,
+      note: note ?? null,
+      balanceBefore: Number(result.balance_before ?? 0),
+      balanceAfter: Number(result.balance_after ?? 0),
+    });
+    return result;
   }
 
   if (!isMissingRpc(rpc.error.message ?? "")) {
@@ -163,9 +182,23 @@ export async function adjustAdminUserDeposit(params: {
     amount,
     reason,
   });
+
+  await ensureDepositAdjustmentLedger(supabase, {
+    userId: params.userId,
+    signedAmount: signed,
+    note: note ?? null,
+    balanceBefore: Number(fallback.balance_before ?? 0),
+    balanceAfter: Number(fallback.balance_after ?? 0),
+  });
+
+  const depositAfter =
+    params.direction === "credit"
+      ? (params.availableDeposit ?? 0) + amount
+      : Math.max(0, (params.availableDeposit ?? 0) - amount);
+
   return {
     ...fallback,
-    deposit_after: undefined,
+    deposit_after: Math.round(depositAfter * 100) / 100,
   };
 }
 
@@ -397,6 +430,45 @@ export async function completeWithdrawal(withdrawalId: string) {
 
 function isMissingRpc(message: string) {
   return /could not find the function|schema cache|does not exist/i.test(message);
+}
+
+async function ensureDepositAdjustmentLedger(
+  supabase: ReturnType<typeof createClient>,
+  params: {
+    userId: string;
+    signedAmount: number;
+    note?: string | null;
+    balanceBefore: number;
+    balanceAfter: number;
+  }
+) {
+  const { data: latest, error: readErr } = await supabase
+    .from("user_deposit_adjustments")
+    .select("id, amount, created_at")
+    .eq("user_id", params.userId)
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (readErr) return;
+
+  if (
+    latest &&
+    Math.abs(Number(latest.amount) - params.signedAmount) < 0.005 &&
+    Date.now() - new Date(latest.created_at).getTime() < 15_000
+  ) {
+    return;
+  }
+
+  const { data: authUser } = await supabase.auth.getUser();
+  await supabase.from("user_deposit_adjustments").insert({
+    user_id: params.userId,
+    admin_id: authUser.user?.id ?? params.userId,
+    amount: params.signedAmount,
+    note: params.note ?? null,
+    balance_before: params.balanceBefore,
+    balance_after: params.balanceAfter,
+  });
 }
 
 export async function rejectWithdrawal(withdrawalId: string, reason: string) {

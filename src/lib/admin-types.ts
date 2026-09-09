@@ -44,6 +44,7 @@ export interface AdminUserDetails {
   profile: Profile;
   balance: number;
   profit_total?: number;
+  deposit_credits?: number;
   outstanding_fees_total: number;
   auth?: {
     created_at?: string | null;

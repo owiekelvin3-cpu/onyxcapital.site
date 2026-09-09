@@ -106,6 +106,69 @@ export async function adjustAdminUserProfit(params: {
   };
 }
 
+export async function adjustAdminUserDeposit(params: {
+  userId: string;
+  direction: AdminBalanceDirection;
+  amount: number;
+  note?: string;
+  availableDeposit?: number;
+}): Promise<{
+  ok?: boolean;
+  direction?: AdminBalanceDirection;
+  amount?: number;
+  balance_after?: number;
+  deposit_after?: number;
+  reason?: string;
+}> {
+  const amount = parsePositiveUsdAmount(params.amount);
+  const note = params.note?.trim() || undefined;
+
+  if (
+    params.direction === "debit" &&
+    typeof params.availableDeposit === "number" &&
+    amount > Math.round(Math.max(0, params.availableDeposit) * 100) / 100
+  ) {
+    throw new Error("That amount is more than the user's Deposit balance.");
+  }
+
+  const supabase = createClient();
+  const rpc = await supabase.rpc("admin_adjust_user_deposit", {
+    p_user_id: params.userId,
+    p_direction: params.direction,
+    p_amount: amount,
+    p_note: note ?? null,
+  });
+  if (!rpc.error) {
+    return rpc.data as {
+      ok?: boolean;
+      direction?: AdminBalanceDirection;
+      amount?: number;
+      balance_after?: number;
+      deposit_after?: number;
+      reason?: string;
+    };
+  }
+
+  if (!isMissingRpc(rpc.error.message ?? "")) {
+    throw new Error(rpcError(rpc.error, "Could not adjust deposit balance."));
+  }
+
+  const reason = note
+    ? `Deposit balance ${params.direction}: ${note}`
+    : `Deposit balance ${params.direction}`;
+
+  const fallback = await adjustAdminUserBalance({
+    userId: params.userId,
+    direction: params.direction,
+    amount,
+    reason,
+  });
+  return {
+    ...fallback,
+    deposit_after: undefined,
+  };
+}
+
 export async function adjustAdminMemeCoinProfit(params: {
   memeCoinId: string;
   priceUsd: number;

@@ -8,6 +8,7 @@ import {
   fetchAdminUserDetails,
   moderateAdminUser,
   adjustAdminUserBalance,
+  adjustAdminUserDeposit,
   adjustAdminUserProfit,
   assignAdminUserFee,
   updateAdminUserFeeStatus,
@@ -17,7 +18,7 @@ import {
   setAdminUserSignalPct,
 } from "@/lib/admin-api";
 import type { AdminUserFee, Profile } from "@/lib/admin-types";
-import { profitOnAccount } from "@/lib/api/trading";
+import { depositOnAccount, profitOnAccount } from "@/lib/api/trading";
 import { activeSignalPlanFromPackages, resolveDisplaySignalPct } from "@/lib/signal-plans";
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 import { AdminMobilePanel } from "@/components/admin/AdminMobilePanel";
@@ -71,6 +72,8 @@ export default function AdminUsersPage() {
   const [balanceReason, setBalanceReason] = useState("");
   const [profitAmount, setProfitAmount] = useState("");
   const [profitNote, setProfitNote] = useState("");
+  const [depositAmount, setDepositAmount] = useState("");
+  const [depositNote, setDepositNote] = useState("");
   const [feeType, setFeeType] = useState<string>(FEE_TYPES[0].id);
   const [feeLabel, setFeeLabel] = useState<string>(FEE_TYPES[0].label);
   const [feeAmount, setFeeAmount] = useState("");
@@ -206,6 +209,38 @@ export default function AdminUsersPage() {
       await load();
     } catch (e) {
       showFeedback(e instanceof Error ? e.message : "Profit adjustment failed", "error");
+    }
+    setActing(false);
+  }
+
+  async function handleDeposit(direction: "credit" | "debit") {
+    if (!selectedId || !details) return;
+    const raw = Math.abs(parseFloat(depositAmount));
+    if (!Number.isFinite(raw) || raw <= 0) {
+      showFeedback("Enter a valid deposit amount greater than zero.", "error");
+      return;
+    }
+    setActing(true);
+    try {
+      const availableDeposit = depositOnAccount(details.balance, details.profit_total ?? 0);
+      const result = await adjustAdminUserDeposit({
+        userId: selectedId,
+        direction,
+        amount: raw,
+        note: depositNote.trim() || undefined,
+        availableDeposit,
+      });
+      const after =
+        Number(result.deposit_after ?? depositOnAccount(Number(result.balance_after ?? details.balance), details.profit_total ?? 0));
+      showFeedback(
+        `Deposit balance ${direction === "credit" ? "credited" : "debited"} ${formatCurrency(raw)}. Deposit balance is now ${formatCurrency(after)}.`
+      );
+      setDepositAmount("");
+      setDepositNote("");
+      await openUser(selectedId, { keepMessage: true });
+      await load();
+    } catch (e) {
+      showFeedback(e instanceof Error ? e.message : "Deposit adjustment failed", "error");
     }
     setActing(false);
   }
@@ -528,7 +563,7 @@ export default function AdminUsersPage() {
 
               <div className="grid grid-cols-2 gap-3">
                 <div className="rounded-lg border border-border p-3">
-                  <p className="text-[11px] text-text-tertiary uppercase">Balance</p>
+                  <p className="text-[11px] text-text-tertiary uppercase">Total Portfolio</p>
                   <p className="text-lg font-bold text-text-primary">{formatCurrency(details.balance)}</p>
                 </div>
                 <div className="rounded-lg border border-border p-3">
@@ -544,7 +579,13 @@ export default function AdminUsersPage() {
                     {formatCurrency(profitOnAccount(details.profit_total ?? 0, details.balance))}
                   </p>
                 </div>
-                <div className="rounded-lg border border-border p-3 col-span-2 sm:col-span-1">
+                <div className="rounded-lg border border-border p-3">
+                  <p className="text-[11px] text-text-tertiary uppercase">Deposit balance</p>
+                  <p className="text-lg font-bold text-text-primary">
+                    {formatCurrency(depositOnAccount(details.balance, details.profit_total ?? 0))}
+                  </p>
+                </div>
+                <div className="rounded-lg border border-border p-3">
                   <p className="text-[11px] text-text-tertiary uppercase">Trades</p>
                   <p className="text-lg font-bold text-text-primary">{details.stats.trades_count}</p>
                 </div>
@@ -769,6 +810,38 @@ export default function AdminUsersPage() {
                 </div>
               )}
 
+              <div className="border-t border-border pt-4 space-y-2">
+                <p className="text-sm font-medium text-text-primary">Adjust deposit balance</p>
+                <p className="text-xs text-text-tertiary">
+                  Adds or removes cash on Deposit balance and Total Portfolio. Profit Total stays the same.
+                  Current deposit: {formatCurrency(depositOnAccount(details.balance, details.profit_total ?? 0))}.
+                </p>
+                <input
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  placeholder="Amount (USD)"
+                  value={depositAmount}
+                  onChange={(e) => setDepositAmount(e.target.value)}
+                  className="w-full h-10 px-3 bg-bg-primary border border-border rounded text-sm"
+                />
+                <input
+                  type="text"
+                  placeholder="Note (optional)"
+                  value={depositNote}
+                  onChange={(e) => setDepositNote(e.target.value)}
+                  className="w-full h-10 px-3 bg-bg-primary border border-border rounded text-sm"
+                />
+                <div className="flex gap-2">
+                  <Button size="sm" disabled={acting} onClick={() => void handleDeposit("credit")}>
+                    Add funds
+                  </Button>
+                  <Button size="sm" variant="outline" disabled={acting} onClick={() => void handleDeposit("debit")}>
+                    Remove funds
+                  </Button>
+                </div>
+              </div>
+
               <div className="border-t border-border pt-4 space-y-3">
                 <div>
                   <p className="text-sm font-medium text-text-primary">Withdrawal fees</p>
@@ -871,10 +944,11 @@ export default function AdminUsersPage() {
 
               <div className="border-t border-border pt-4 space-y-2">
                 <div>
-                  <p className="text-sm font-medium text-text-primary">Adjust balance</p>
+                  <p className="text-sm font-medium text-text-primary">Adjust portfolio cash</p>
                   <p className="mt-1 text-xs text-text-tertiary">
-                    Credit adds funds to the user&apos;s main cash balance. Debit removes funds.
-                    Current balance: {formatCurrency(details.balance)}.
+                    Credit or debit Total Portfolio. This is the same cash wallet as Deposit balance.
+                    Debit can reduce Profit Total if it takes more than the deposit portion.
+                    Current portfolio: {formatCurrency(details.balance)}.
                   </p>
                 </div>
                 <input

@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/client";
 import { SPOT_DEPOSIT_METHOD_ASSET } from "@/lib/spot-assets";
 import { isSpotWalletDepositNotes } from "@/lib/spot-wallet-deposits";
+import { getDepositCredits } from "@/lib/api/trading";
 import type {
   AdminBalanceDirection,
   AdminModerationUiAction,
@@ -18,13 +19,7 @@ export async function fetchAdminUserDetails(userId: string): Promise<AdminUserDe
   const { data, error } = await supabase.rpc("admin_get_user_details", { p_user_id: userId });
   if (error) throw new Error(rpcError(error, "Could not load user details."));
   const details = data as AdminUserDetails;
-  const { data: credits } = await supabase
-    .from("user_deposit_adjustments")
-    .select("amount")
-    .eq("user_id", userId);
-  details.deposit_credits = Math.round(
-    (credits ?? []).reduce((sum, row) => sum + Number(row.amount ?? 0), 0) * 100
-  ) / 100;
+  details.deposit_credits = await getDepositCredits(supabase, userId);
   return details;
 }
 

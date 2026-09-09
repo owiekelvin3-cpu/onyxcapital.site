@@ -3,7 +3,7 @@ import {
   getRecentTrades,
   getPortfolioSummary,
   getPendingTradesCount,
-  getProfitTotal,
+  getWalletSplit,
 } from "@/lib/api/trading";
 import { getCachedLiveMarketPairs } from "@/lib/live-prices";
 import { chartFromTrades } from "@/lib/chart-data";
@@ -11,6 +11,8 @@ import { DashboardOverview } from "@/components/dashboard/DashboardOverview";
 import { isKycApproved } from "@/lib/kyc";
 import { activeSignalPlanFromPackages, resolveDisplaySignalPct } from "@/lib/signal-plans";
 import type { SignalPackageRow } from "@/lib/supabase/types";
+
+export const dynamic = "force-dynamic";
 
 export default async function DashboardPage() {
   const supabase = await createClient();
@@ -26,7 +28,7 @@ export default async function DashboardPage() {
         .maybeSingle()
     : { data: null };
 
-  const [summary, recentTrades, openOrders, profitTotal, marketPairs, tradesCount, packagesRes] =
+  const [summary, recentTrades, openOrders, wallet, marketPairs, tradesCount, packagesRes] =
     await Promise.all([
       user ? getPortfolioSummary(supabase, user.id) : Promise.resolve({
         cashBalance: 0,
@@ -39,7 +41,12 @@ export default async function DashboardPage() {
       }),
       user ? getRecentTrades(supabase, user.id, 5) : Promise.resolve([]),
       user ? getPendingTradesCount(supabase, user.id) : Promise.resolve(0),
-      user ? getProfitTotal(supabase, user.id) : Promise.resolve(0),
+      user ? getWalletSplit(supabase, user.id) : Promise.resolve({
+        cash: 0,
+        profit: 0,
+        deposit: 0,
+        credits: 0,
+      }),
       getCachedLiveMarketPairs(),
       user
         ? supabase
@@ -71,7 +78,8 @@ export default async function DashboardPage() {
       userEmail={user?.email}
       avatarUrl={profile?.avatar_url ?? undefined}
       summary={summary}
-      profitTotal={profitTotal}
+      profitTotal={wallet.profit}
+      depositBalance={wallet.deposit}
       openOrders={openOrders}
       tradesCount={tradesCount}
       chartData={chartData}

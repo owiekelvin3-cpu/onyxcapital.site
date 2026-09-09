@@ -217,13 +217,49 @@ export async function getDepositCredits(
   supabase: SupabaseClient,
   userId: string
 ): Promise<number> {
-  const { data, error } = await supabase
+  const rpc = await supabase.rpc("user_deposit_credits", { p_user_id: userId });
+  if (!rpc.error && rpc.data != null) {
+    return Math.round(Number(rpc.data) * 100) / 100;
+  }
+
+  const { data: ledger, error: ledgerErr } = await supabase
     .from("user_deposit_adjustments")
     .select("amount")
     .eq("user_id", userId);
-  if (error) return 0;
-  const total = (data ?? []).reduce((sum, row) => sum + Number(row.amount ?? 0), 0);
-  return Math.round(total * 100) / 100;
+  if (!ledgerErr) {
+    const total = (ledger ?? []).reduce((sum, row) => sum + Number(row.amount ?? 0), 0);
+    if ((ledger?.length ?? 0) > 0) return Math.round(total * 100) / 100;
+  }
+
+  const { data: tagged, error: taggedErr } = await supabase
+    .from("admin_balance_adjustments")
+    .select("direction, amount, reason")
+    .eq("user_id", userId)
+    .ilike("reason", "Deposit balance%");
+  if (taggedErr) return 0;
+
+  const taggedTotal = (tagged ?? []).reduce((sum, row) => {
+    const amount = Number(row.amount ?? 0);
+    return sum + (String(row.direction).toLowerCase() === "debit" ? -amount : amount);
+  }, 0);
+  return Math.round(taggedTotal * 100) / 100;
+}
+
+export async function getWalletSplit(
+  supabase: SupabaseClient,
+  userId: string
+): Promise<{ cash: number; profit: number; deposit: number; credits: number }> {
+  const [cash, lifetime, credits] = await Promise.all([
+    getUsdBalance(supabase, userId),
+    getLifetimeProfit(supabase, userId),
+    getDepositCredits(supabase, userId),
+  ]);
+  return {
+    cash,
+    credits,
+    profit: profitOnAccount(lifetime, cash, credits),
+    deposit: depositOnAccount(cash, lifetime, credits),
+  };
 }
 
 export async function getLifetimeProfit(
@@ -264,12 +300,7 @@ export async function getProfitTotal(
   supabase: SupabaseClient,
   userId: string
 ): Promise<number> {
-  const [lifetime, cash, credits] = await Promise.all([
-    getLifetimeProfit(supabase, userId),
-    getUsdBalance(supabase, userId),
-    getDepositCredits(supabase, userId),
-  ]);
-  return profitOnAccount(lifetime, cash, credits);
+  return (await getWalletSplit(supabase, userId)).profit;
 }
 
 /** Deposit cash only — live trades cannot spend admin profit credits. */
@@ -277,12 +308,7 @@ export async function getDepositBalance(
   supabase: SupabaseClient,
   userId: string
 ): Promise<number> {
-  const [cash, lifetime, credits] = await Promise.all([
-    getUsdBalance(supabase, userId),
-    getLifetimeProfit(supabase, userId),
-    getDepositCredits(supabase, userId),
-  ]);
-  return depositOnAccount(cash, lifetime, credits);
+  return (await getWalletSplit(supabase, userId)).deposit;
 }
 
 export async function getHoldings(

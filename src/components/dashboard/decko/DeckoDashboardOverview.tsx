@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useMemo } from "react";
 import { motion } from "framer-motion";
-import { depositOnAccount, type PortfolioSummary } from "@/lib/api/trading";
+import { type PortfolioSummary } from "@/lib/api/trading";
 import type { ChartPoint } from "@/lib/chart-data";
 import type { MarketPair } from "@/lib/market-data";
 import type { TradeRow } from "@/lib/supabase/types";
@@ -32,6 +32,7 @@ type Props = {
   avatarUrl?: string;
   summary: PortfolioSummary;
   profitTotal: number;
+  depositBalance: number;
   openOrders: number;
   tradesCount: number;
   chartData: ChartPoint[];
@@ -256,6 +257,7 @@ export function DeckoDashboardOverview({
   avatarUrl,
   summary,
   profitTotal,
+  depositBalance,
   openOrders,
   tradesCount,
   chartData: _chartData,
@@ -268,7 +270,6 @@ export function DeckoDashboardOverview({
   const firstName = displayName.split(" ")[0] || displayName || "Trader";
   const initial = (displayName || userEmail || "U").charAt(0).toUpperCase();
 
-  const depositBalance = depositOnAccount(summary.cashBalance, profitTotal);
   const profitTrend =
     summary.totalValue > 0 ? (profitTotal / summary.totalValue) * 100 : 0;
   const depositTrend =

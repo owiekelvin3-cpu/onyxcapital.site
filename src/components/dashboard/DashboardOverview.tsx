@@ -10,6 +10,7 @@ type Props = {
   avatarUrl?: string;
   summary: PortfolioSummary;
   profitTotal: number;
+  depositBalance: number;
   openOrders: number;
   tradesCount: number;
   chartData: ChartPoint[];

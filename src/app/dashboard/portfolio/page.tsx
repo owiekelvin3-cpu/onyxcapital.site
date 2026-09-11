@@ -1,11 +1,15 @@
 import { createClient } from "@/lib/supabase/server";
+import { createServiceClient } from "@/lib/supabase/service";
 import {
   getPortfolioSummary,
-  getProfitTotal,
   getRecentTrades,
+  getWalletSplit,
 } from "@/lib/api/trading";
 import { chartFromTrades } from "@/lib/chart-data";
 import { DeckoPortfolio } from "@/components/dashboard/decko/DeckoPortfolio";
+
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
 
 export default async function PortfolioPage() {
   const supabase = await createClient();
@@ -34,21 +38,33 @@ export default async function PortfolioPage() {
     );
   }
 
-  const [summary, trades, profitTotal] = await Promise.all([
+  const [summary, trades, wallet] = await Promise.all([
     getPortfolioSummary(supabase, user.id),
     getRecentTrades(supabase, user.id, 50),
-    getProfitTotal(supabase, user.id),
+    (async () => {
+      try {
+        return await getWalletSplit(createServiceClient(), user.id);
+      } catch {
+        return getWalletSplit(supabase, user.id);
+      }
+    })(),
   ]);
 
-  const chartData = chartFromTrades(summary.totalValue, trades);
+  const portfolio = {
+    ...summary,
+    cashBalance: wallet.cash,
+    totalValue: wallet.cash,
+  };
+  const chartData = chartFromTrades(portfolio.totalValue, trades);
   const recentTrades = trades.slice(0, 5);
 
   return (
     <DeckoPortfolio
-      summary={summary}
-      profitTotal={profitTotal}
+      summary={portfolio}
+      profitTotal={wallet.profit}
       chartData={chartData}
       recentTrades={recentTrades}
     />
   );
 }
+

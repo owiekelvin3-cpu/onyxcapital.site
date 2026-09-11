@@ -1,9 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
-import { type PortfolioSummary } from "@/lib/api/trading";
+import { fetchViewerWalletSplit, type PortfolioSummary } from "@/lib/api/trading";
+import { DASHBOARD_REFRESH_EVENT } from "@/lib/dashboard-live-sync";
 import type { ChartPoint } from "@/lib/chart-data";
 import type { MarketPair } from "@/lib/market-data";
 import type { TradeRow } from "@/lib/supabase/types";
@@ -267,11 +268,45 @@ export function DeckoDashboardOverview({
   signalPlanName,
   kycVerified = false,
 }: Props) {
+  const [liveCash, setLiveCash] = useState(summary.totalValue);
+  const [liveDeposit, setLiveDeposit] = useState(depositBalance);
+  const [liveProfit, setLiveProfit] = useState(profitTotal);
+
+  useEffect(() => {
+    setLiveCash(summary.totalValue);
+    setLiveDeposit(depositBalance);
+    setLiveProfit(profitTotal);
+  }, [summary.totalValue, depositBalance, profitTotal]);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function refreshWallet() {
+      const wallet = await fetchViewerWalletSplit();
+      if (cancelled || !wallet) return;
+      setLiveCash((prev) => (Math.abs(prev - wallet.cash) < 0.005 ? prev : wallet.cash));
+      setLiveDeposit((prev) => (Math.abs(prev - wallet.deposit) < 0.005 ? prev : wallet.deposit));
+      setLiveProfit((prev) => (Math.abs(prev - wallet.profit) < 0.005 ? prev : wallet.profit));
+    }
+
+    void refreshWallet();
+    const onVisible = () => {
+      if (document.visibilityState === "visible") void refreshWallet();
+    };
+    window.addEventListener(DASHBOARD_REFRESH_EVENT, refreshWallet);
+    document.addEventListener("visibilitychange", onVisible);
+    return () => {
+      cancelled = true;
+      window.removeEventListener(DASHBOARD_REFRESH_EVENT, refreshWallet);
+      document.removeEventListener("visibilitychange", onVisible);
+    };
+  }, []);
+
   const firstName = displayName.split(" ")[0] || displayName || "Trader";
   const initial = (displayName || userEmail || "U").charAt(0).toUpperCase();
 
   const profitTrend =
-    summary.totalValue > 0 ? (profitTotal / summary.totalValue) * 100 : 0;
+    liveCash > 0 ? (liveProfit / liveCash) * 100 : 0;
   const depositTrend =
     summary.totalDeposits > 0
       ? ((summary.totalValue - summary.totalWithdrawals) / summary.totalDeposits - 1) * 100
@@ -340,10 +375,10 @@ export function DeckoDashboardOverview({
 
       {/* Mobile hero — portfolio & profit side by side */}
       <MobilePortfolioHero
-        totalValue={summary.totalValue}
-        depositBalance={depositBalance}
+        totalValue={liveCash}
+        depositBalance={liveDeposit}
         currency={summary.currency}
-        profitTotal={profitTotal}
+        profitTotal={liveProfit}
         profitTrend={profitTrend}
       />
 
@@ -356,7 +391,7 @@ export function DeckoDashboardOverview({
       <DeckoStagger className="hidden gap-4 lg:grid lg:grid-cols-3">
         <KpiCard
           label="Total Portfolio"
-          numeric={summary.totalValue}
+          numeric={liveCash}
           decimals={2}
           prefix="$"
           trend={depositTrend}
@@ -365,7 +400,7 @@ export function DeckoDashboardOverview({
         />
         <KpiCard
           label="Profit Total"
-          value={formatCurrency(profitTotal, summary.currency)}
+          value={formatCurrency(liveProfit, summary.currency)}
           trend={profitTrend}
           trendLabel="realized P&L"
           icon={TrendingUp}
@@ -373,7 +408,7 @@ export function DeckoDashboardOverview({
         />
         <KpiCard
           label="Deposit balance"
-          numeric={depositBalance}
+          numeric={liveDeposit}
           decimals={2}
           prefix="$"
           icon={Wallet}

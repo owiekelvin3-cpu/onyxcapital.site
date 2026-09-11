@@ -1,9 +1,11 @@
 import { createClient } from "@/lib/supabase/server";
+import { createServiceClient } from "@/lib/supabase/service";
 import {
   getRecentTrades,
   getPortfolioSummary,
   getPendingTradesCount,
   getWalletSplit,
+  type WalletSplit,
 } from "@/lib/api/trading";
 import { getCachedLiveMarketPairs } from "@/lib/live-prices";
 import { chartFromTrades } from "@/lib/chart-data";
@@ -13,6 +15,18 @@ import { activeSignalPlanFromPackages, resolveDisplaySignalPct } from "@/lib/sig
 import type { SignalPackageRow } from "@/lib/supabase/types";
 
 export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
+async function walletForUser(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  userId: string
+): Promise<WalletSplit> {
+  try {
+    return await getWalletSplit(createServiceClient(), userId);
+  } catch {
+    return getWalletSplit(supabase, userId);
+  }
+}
 
 export default async function DashboardPage() {
   const supabase = await createClient();
@@ -41,7 +55,7 @@ export default async function DashboardPage() {
       }),
       user ? getRecentTrades(supabase, user.id, 5) : Promise.resolve([]),
       user ? getPendingTradesCount(supabase, user.id) : Promise.resolve(0),
-      user ? getWalletSplit(supabase, user.id) : Promise.resolve({
+      user ? walletForUser(supabase, user.id) : Promise.resolve({
         cash: 0,
         profit: 0,
         deposit: 0,
@@ -65,7 +79,12 @@ export default async function DashboardPage() {
         : Promise.resolve({ data: [] as SignalPackageRow[] }),
     ]);
 
-  const chartData = chartFromTrades(summary.totalValue, recentTrades);
+  const portfolio = {
+    ...summary,
+    cashBalance: wallet.cash,
+    totalValue: wallet.cash,
+  };
+  const chartData = chartFromTrades(portfolio.totalValue, recentTrades);
   const displayName = profile?.full_name?.trim() ?? user?.email?.split("@")[0] ?? "";
   const signalPlan = activeSignalPlanFromPackages(
     (packagesRes.data ?? []) as Pick<
@@ -79,7 +98,7 @@ export default async function DashboardPage() {
       displayName={displayName}
       userEmail={user?.email}
       avatarUrl={profile?.avatar_url ?? undefined}
-      summary={summary}
+      summary={portfolio}
       profitTotal={wallet.profit}
       depositBalance={wallet.deposit}
       openOrders={openOrders}

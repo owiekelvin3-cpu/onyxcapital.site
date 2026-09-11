@@ -11,7 +11,7 @@ import {
   uncopyTrader,
 } from "@/lib/api/subscriptions";
 import { getCopyTraders } from "@/lib/api/copy-traders";
-import { getDepositBalance } from "@/lib/api/trading";
+import { viewerDepositBalance } from "@/lib/api/trading";
 import type { CopySubscriptionRow } from "@/lib/supabase/types";
 import {
   groupCopyTradersBySection,
@@ -70,7 +70,7 @@ export default function CopyTradingPage() {
         setUserId(user.id);
         const [rows, bal] = await Promise.all([
           getCopySubscriptions(supabase, user.id),
-          getDepositBalance(supabase, user.id),
+          viewerDepositBalance(supabase, user.id),
         ]);
         setSubscriptions(rows);
         setBalance(bal);
@@ -89,7 +89,7 @@ export default function CopyTradingPage() {
       const supabase = createClient();
       const [rows, bal] = await Promise.all([
         getCopySubscriptions(supabase, userId!),
-        getDepositBalance(supabase, userId!),
+        viewerDepositBalance(supabase, userId!),
       ]);
       setSubscriptions(rows);
       setBalance(bal);

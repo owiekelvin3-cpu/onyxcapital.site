@@ -8,6 +8,7 @@ import { ArrowDownToLine, Loader2, X } from "@/components/icons";
 import { Button } from "@/components/ui/Button";
 import { createClient } from "@/lib/supabase/client";
 import { getUserSignalContext, purchaseSignalPackage } from "@/lib/api/signals";
+import { viewerDepositBalance } from "@/lib/api/trading";
 import { SIGNAL_PLANS, type SignalTier } from "@/lib/signal-plans";
 import type { SignalPackageRow } from "@/lib/supabase/types";
 import { cn, formatCurrency } from "@/lib/utils";
@@ -156,8 +157,11 @@ export function SignalsClient() {
     }
     setUserId(user.id);
     try {
-      const ctx = await getUserSignalContext(supabase, user.id);
-      setBalance(ctx.balance);
+      const [ctx, deposit] = await Promise.all([
+        getUserSignalContext(supabase, user.id),
+        viewerDepositBalance(supabase, user.id),
+      ]);
+      setBalance(deposit);
       setPackages(ctx.activePackages);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not load signals.");

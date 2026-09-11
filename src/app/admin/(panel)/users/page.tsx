@@ -42,7 +42,17 @@ function walletSplit(details: {
   deposit_credits?: number;
   user_deposits?: number;
   buy_spend?: number;
+  deposit_on_account?: number;
+  profit_on_account?: number;
 }) {
+  if (
+    typeof details.deposit_on_account === "number" &&
+    Number.isFinite(details.deposit_on_account) &&
+    typeof details.profit_on_account === "number" &&
+    Number.isFinite(details.profit_on_account)
+  ) {
+    return { profit: details.profit_on_account, deposit: details.deposit_on_account };
+  }
   const credits = details.deposit_credits ?? 0;
   const lifetime = details.profit_total ?? 0;
   const userDeposits = details.user_deposits ?? 0;

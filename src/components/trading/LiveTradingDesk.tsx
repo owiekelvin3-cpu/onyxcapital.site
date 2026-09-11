@@ -22,7 +22,7 @@ import { CryptoIcon } from "@/components/crypto/CryptoIcon";
 import { createClient } from "@/lib/supabase/client";
 import {
   executeTrade,
-  getDepositBalance,
+  viewerDepositBalance,
   getHoldings,
   getRecentTrades,
 } from "@/lib/api/trading";
@@ -171,7 +171,7 @@ export function LiveTradingDesk() {
     if (!user) return;
     setUserId(user.id);
     const [deposit, held, recent] = await Promise.all([
-      getDepositBalance(supabase, user.id),
+      viewerDepositBalance(supabase, user.id),
       getHoldings(supabase, user.id),
       getRecentTrades(supabase, user.id, 40),
     ]);

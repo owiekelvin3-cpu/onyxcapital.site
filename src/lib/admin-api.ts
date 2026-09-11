@@ -23,6 +23,8 @@ export async function fetchAdminUserDetails(userId: string): Promise<AdminUserDe
   details.deposit_credits = wallet.credits;
   details.user_deposits = wallet.userDeposits;
   details.buy_spend = wallet.buySpend;
+  details.deposit_on_account = wallet.deposit;
+  details.profit_on_account = wallet.profit;
   return details;
 }
 

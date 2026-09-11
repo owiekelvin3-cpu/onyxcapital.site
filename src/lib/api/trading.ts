@@ -191,13 +191,42 @@ function money(value: number) {
   return Math.round((Number(value) || 0) * 100) / 100;
 }
 
-/** User deposits + admin Add/Remove funds, minus live buy spend. */
+export type WalletSplit = {
+  cash: number;
+  profit: number;
+  deposit: number;
+  credits: number;
+  userDeposits: number;
+  buySpend: number;
+};
+
+async function rpcMoney(
+  supabase: SupabaseClient,
+  fn: "user_deposit_balance" | "user_deposit_credits" | "user_deposit_spend",
+  userId: string
+): Promise<number | null> {
+  const { data, error } = await supabase.rpc(fn, { p_user_id: userId });
+  if (error || data == null) return null;
+  const value = Number(data);
+  if (!Number.isFinite(value)) return null;
+  return money(value);
+}
+
+function profitFromCashAndDeposit(lifetimeProfit: number, cashBalance: number, deposit: number): number {
+  const cash = money(Math.max(0, cashBalance));
+  const profit = money(lifetimeProfit);
+  if (cash <= 0) return 0;
+  if (profit <= 0) return profit;
+  return Math.min(profit, money(Math.max(0, cash - deposit)));
+}
+
+/** User deposits + admin Add/Remove funds. Cash already nets spending. */
 export function depositPrincipal(
   userDeposits = 0,
   adminDepositCredits = 0,
-  buySpend = 0
+  _buySpend = 0
 ): number {
-  return money(userDeposits + adminDepositCredits - buySpend);
+  return money(userDeposits + adminDepositCredits);
 }
 
 /** Deposit balance is only user deposits and admin deposit adjustments. */
@@ -334,32 +363,78 @@ export async function getDepositSpend(
   return money(total);
 }
 
+function parseWalletSplit(raw: unknown): WalletSplit | null {
+  if (!raw || typeof raw !== "object") return null;
+  const d = raw as Record<string, unknown>;
+  const cash = Number(d.cash);
+  const deposit = Number(d.deposit);
+  const profit = Number(d.profit);
+  if (![cash, deposit, profit].every(Number.isFinite)) return null;
+  return {
+    cash: money(cash),
+    deposit: money(deposit),
+    profit: money(profit),
+    credits: money(Number(d.credits ?? 0)),
+    userDeposits: money(Number(d.userDeposits ?? 0)),
+    buySpend: money(Number(d.buySpend ?? 0)),
+  };
+}
+
 export async function getWalletSplit(
   supabase: SupabaseClient,
   userId: string
-): Promise<{
-  cash: number;
-  profit: number;
-  deposit: number;
-  credits: number;
-  userDeposits: number;
-  buySpend: number;
-}> {
-  const [cash, lifetime, credits, userDeposits, buySpend] = await Promise.all([
-    getUsdBalance(supabase, userId),
-    getLifetimeProfit(supabase, userId),
-    getDepositCredits(supabase, userId),
-    getApprovedDepositTotal(supabase, userId),
-    getDepositSpend(supabase, userId),
-  ]);
-  return {
-    cash,
-    credits,
-    userDeposits,
-    buySpend,
-    profit: profitOnAccount(lifetime, cash, credits, userDeposits, buySpend),
-    deposit: depositOnAccount(cash, lifetime, credits, userDeposits, buySpend),
-  };
+): Promise<WalletSplit> {
+  const split = await supabase.rpc("user_wallet_split", { p_user_id: userId });
+  const fromRpc = !split.error ? parseWalletSplit(split.data) : null;
+  if (fromRpc) return fromRpc;
+
+  const [cash, lifetime, rpcDeposit, credits, rpcSpend, userDeposits, clientSpend] =
+    await Promise.all([
+      getUsdBalance(supabase, userId),
+      getLifetimeProfit(supabase, userId),
+      rpcMoney(supabase, "user_deposit_balance", userId),
+      getDepositCredits(supabase, userId),
+      rpcMoney(supabase, "user_deposit_spend", userId),
+      getApprovedDepositTotal(supabase, userId),
+      getDepositSpend(supabase, userId),
+    ]);
+
+  const buySpend = rpcSpend ?? clientSpend;
+  const deposit =
+    rpcDeposit ?? depositOnAccount(cash, lifetime, credits, userDeposits, buySpend);
+  const profit = profitFromCashAndDeposit(lifetime, cash, deposit);
+
+  return { cash, credits, userDeposits, buySpend, deposit, profit };
+}
+
+/** Browser: same deposit/profit as Admin → Users (server reads the ledger). */
+export async function fetchViewerWalletSplit(): Promise<WalletSplit | null> {
+  if (typeof window === "undefined") return null;
+  try {
+    const res = await fetch("/api/wallet/split", { cache: "no-store" });
+    if (!res.ok) return null;
+    const data = (await res.json()) as Partial<WalletSplit>;
+    if (typeof data.deposit !== "number" || typeof data.cash !== "number") return null;
+    return {
+      cash: money(data.cash),
+      profit: money(data.profit ?? 0),
+      deposit: money(data.deposit),
+      credits: money(data.credits ?? 0),
+      userDeposits: money(data.userDeposits ?? 0),
+      buySpend: money(data.buySpend ?? 0),
+    };
+  } catch {
+    return null;
+  }
+}
+
+export async function viewerDepositBalance(
+  supabase: SupabaseClient,
+  userId: string
+): Promise<number> {
+  const wallet = await fetchViewerWalletSplit();
+  if (wallet) return wallet.deposit;
+  return getDepositBalance(supabase, userId);
 }
 
 export async function getLifetimeProfit(

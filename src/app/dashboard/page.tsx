@@ -46,6 +46,8 @@ export default async function DashboardPage() {
         profit: 0,
         deposit: 0,
         credits: 0,
+        userDeposits: 0,
+        buySpend: 0,
       }),
       getCachedLiveMarketPairs(),
       user

@@ -187,30 +187,46 @@ export async function get24hProfit(
   return data.reduce((sum, row) => sum + (row.profit ?? 0), 0);
 }
 
-/** Profit still sitting in the account — never more than cash, and 0 when the wallet is empty. */
+function money(value: number) {
+  return Math.round((Number(value) || 0) * 100) / 100;
+}
+
+/** User deposits + admin Add/Remove funds, minus live buy spend. */
+export function depositPrincipal(
+  userDeposits = 0,
+  adminDepositCredits = 0,
+  buySpend = 0
+): number {
+  return money(userDeposits + adminDepositCredits - buySpend);
+}
+
+/** Deposit balance is only user deposits and admin deposit adjustments. */
+export function depositOnAccount(
+  cashBalance: number,
+  _lifetimeProfit: number,
+  depositCredits = 0,
+  userDeposits = 0,
+  buySpend = 0
+): number {
+  const cash = Math.round(Math.max(0, Number(cashBalance) || 0) * 100) / 100;
+  const principal = depositPrincipal(userDeposits, depositCredits, buySpend);
+  return Math.round(Math.max(0, Math.min(cash, principal)) * 100) / 100;
+}
+
+/** Profit still sitting in the account — never more than cash after Deposit balance. */
 export function profitOnAccount(
   lifetimeProfit: number,
   cashBalance: number,
-  depositCredits = 0
+  depositCredits = 0,
+  userDeposits = 0,
+  buySpend = 0
 ): number {
   const cash = Math.round(Math.max(0, Number(cashBalance) || 0) * 100) / 100;
-  const reservedDeposit = Math.round(Math.max(0, Number(depositCredits) || 0) * 100) / 100;
-  const profit = Math.round((Number(lifetimeProfit) || 0) * 100) / 100;
+  const profit = money(lifetimeProfit);
   if (cash <= 0) return 0;
+  const deposit = depositOnAccount(cash, profit, depositCredits, userDeposits, buySpend);
   if (profit <= 0) return profit;
-  const room = Math.round(Math.max(0, cash - reservedDeposit) * 100) / 100;
-  return Math.min(profit, room);
-}
-
-/** Cash that is not profit — admin deposit credits stay in Deposit balance, not Profit Total. */
-export function depositOnAccount(
-  cashBalance: number,
-  lifetimeProfit: number,
-  depositCredits = 0
-): number {
-  const cash = Math.round(Math.max(0, Number(cashBalance) || 0) * 100) / 100;
-  const profit = profitOnAccount(lifetimeProfit, cash, depositCredits);
-  return Math.round(Math.max(0, cash - Math.max(0, profit)) * 100) / 100;
+  return Math.min(profit, Math.round(Math.max(0, cash - deposit) * 100) / 100);
 }
 
 export async function getDepositCredits(
@@ -245,20 +261,62 @@ export async function getDepositCredits(
   return Math.round(taggedTotal * 100) / 100;
 }
 
+export async function getApprovedDepositTotal(
+  supabase: SupabaseClient,
+  userId: string
+): Promise<number> {
+  const { data, error } = await supabase
+    .from("deposits")
+    .select("amount")
+    .eq("user_id", userId)
+    .in("status", ["approved", "completed"]);
+  if (error) return 0;
+  return money((data ?? []).reduce((sum, row) => sum + Number(row.amount ?? 0), 0));
+}
+
+export async function getLiveBuySpend(
+  supabase: SupabaseClient,
+  userId: string
+): Promise<number> {
+  const { data, error } = await supabase
+    .from("trades")
+    .select("amount, price, status")
+    .eq("user_id", userId)
+    .eq("type", "buy");
+  if (error) return 0;
+  const total = (data ?? []).reduce((sum, row) => {
+    const status = String(row.status ?? "").toLowerCase();
+    if (status === "rejected" || status === "cancelled") return sum;
+    return sum + Number(row.amount ?? 0) * Number(row.price ?? 0);
+  }, 0);
+  return money(total);
+}
+
 export async function getWalletSplit(
   supabase: SupabaseClient,
   userId: string
-): Promise<{ cash: number; profit: number; deposit: number; credits: number }> {
-  const [cash, lifetime, credits] = await Promise.all([
+): Promise<{
+  cash: number;
+  profit: number;
+  deposit: number;
+  credits: number;
+  userDeposits: number;
+  buySpend: number;
+}> {
+  const [cash, lifetime, credits, userDeposits, buySpend] = await Promise.all([
     getUsdBalance(supabase, userId),
     getLifetimeProfit(supabase, userId),
     getDepositCredits(supabase, userId),
+    getApprovedDepositTotal(supabase, userId),
+    getLiveBuySpend(supabase, userId),
   ]);
   return {
     cash,
     credits,
-    profit: profitOnAccount(lifetime, cash, credits),
-    deposit: depositOnAccount(cash, lifetime, credits),
+    userDeposits,
+    buySpend,
+    profit: profitOnAccount(lifetime, cash, credits, userDeposits, buySpend),
+    deposit: depositOnAccount(cash, lifetime, credits, userDeposits, buySpend),
   };
 }
 

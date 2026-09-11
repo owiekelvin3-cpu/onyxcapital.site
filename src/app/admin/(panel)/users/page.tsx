@@ -40,12 +40,16 @@ function walletSplit(details: {
   balance: number;
   profit_total?: number;
   deposit_credits?: number;
+  user_deposits?: number;
+  buy_spend?: number;
 }) {
   const credits = details.deposit_credits ?? 0;
   const lifetime = details.profit_total ?? 0;
+  const userDeposits = details.user_deposits ?? 0;
+  const buySpend = details.buy_spend ?? 0;
   return {
-    profit: profitOnAccount(lifetime, details.balance, credits),
-    deposit: depositOnAccount(details.balance, lifetime, credits),
+    profit: profitOnAccount(lifetime, details.balance, credits, userDeposits, buySpend),
+    deposit: depositOnAccount(details.balance, lifetime, credits, userDeposits, buySpend),
   };
 }
 
@@ -250,7 +254,9 @@ export default function AdminUsersPage() {
           depositOnAccount(
             Number(result.balance_after ?? details.balance),
             details.profit_total ?? 0,
-            nextCredits
+            nextCredits,
+            details.user_deposits ?? 0,
+            details.buy_spend ?? 0
           )
       );
       showFeedback(
@@ -832,7 +838,8 @@ export default function AdminUsersPage() {
               <div className="border-t border-border pt-4 space-y-2">
                 <p className="text-sm font-medium text-text-primary">Adjust deposit balance</p>
                 <p className="text-xs text-text-tertiary">
-                  Adds or removes cash on Deposit balance and Total Portfolio. Profit Total stays the same.
+                  Adds or removes cash on Deposit balance and Total Portfolio. Only user deposits and these
+                  adjustments appear in Deposit balance. Profit Total stays the same.
                   Current deposit: {formatCurrency(walletSplit(details).deposit)}.
                 </p>
                 <input
@@ -965,9 +972,9 @@ export default function AdminUsersPage() {
                 <div>
                   <p className="text-sm font-medium text-text-primary">Adjust portfolio cash</p>
                   <p className="mt-1 text-xs text-text-tertiary">
-                    Credit or debit Total Portfolio. This is the same cash wallet as Deposit balance.
-                    Debit can reduce Profit Total if it takes more than the deposit portion.
-                    Current portfolio: {formatCurrency(details.balance)}.
+                    Credit or debit Total Portfolio cash. This does not change Deposit balance — use
+                    Adjust deposit balance for that. Debit can reduce Profit Total if it takes more
+                    than the remaining profit. Current portfolio: {formatCurrency(details.balance)}.
                   </p>
                 </div>
                 <input

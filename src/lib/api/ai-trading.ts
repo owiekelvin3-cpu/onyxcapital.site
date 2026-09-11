@@ -67,7 +67,12 @@ export async function purchaseAiBot(
     .select(AI_SELECT)
     .single();
 
-  if (error) throw new Error(error.message);
+  if (error) {
+    if (error.message.toLowerCase().includes("insufficient")) {
+      throw new Error("Insufficient deposit balance. Profit can only be withdrawn.");
+    }
+    throw new Error(error.message);
+  }
   return data as AiSubscriptionRow;
 }
 

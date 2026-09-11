@@ -1,7 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { SIGNAL_PLANS, resolveDisplaySignalPct, signalTierRank, type SignalPlan, type SignalTier, userTierRankFromPackages } from "@/lib/signal-plans";
 import type { SignalPackageRow, TradingSignalRow } from "@/lib/supabase/types";
-import { getUsdBalance } from "@/lib/api/trading";
+import { getDepositBalance } from "@/lib/api/trading";
 
 export type UserSignalContext = {
   signalPct: number;
@@ -18,7 +18,7 @@ export async function getUserSignalContext(
 ): Promise<UserSignalContext> {
   const [profileRes, balance, packagesRes] = await Promise.all([
     supabase.from("profiles").select("signal_pct").eq("id", userId).maybeSingle(),
-    getUsdBalance(supabase, userId),
+    getDepositBalance(supabase, userId),
     supabase
       .from("signal_packages")
       .select("id, user_id, package_name, package_id, price, status, expires_at, admin_granted, created_at")
@@ -74,8 +74,8 @@ export async function purchaseSignalPackage(
     .single();
 
   if (error) {
-    if (error.message.toLowerCase().includes("insufficient balance")) {
-      throw new Error("Insufficient balance. Deposit funds to purchase signals.");
+    if (error.message.toLowerCase().includes("insufficient")) {
+      throw new Error("Insufficient deposit balance. Profit can only be withdrawn — deposit funds to buy a signal plan.");
     }
     throw new Error(error.message);
   }

@@ -278,17 +278,59 @@ export async function getLiveBuySpend(
   supabase: SupabaseClient,
   userId: string
 ): Promise<number> {
-  const { data, error } = await supabase
-    .from("trades")
-    .select("amount, price, status")
-    .eq("user_id", userId)
-    .eq("type", "buy");
-  if (error) return 0;
-  const total = (data ?? []).reduce((sum, row) => {
-    const status = String(row.status ?? "").toLowerCase();
-    if (status === "rejected" || status === "cancelled") return sum;
-    return sum + Number(row.amount ?? 0) * Number(row.price ?? 0);
-  }, 0);
+  return getDepositSpend(supabase, userId);
+}
+
+export async function getDepositSpend(
+  supabase: SupabaseClient,
+  userId: string
+): Promise<number> {
+  const [tradesRes, signalsRes, copyRes, aiRes, miningRes, memeRes] = await Promise.all([
+    supabase.from("trades").select("amount, price, status").eq("user_id", userId).eq("type", "buy"),
+    supabase.from("signal_packages").select("price").eq("user_id", userId),
+    supabase.from("copy_trading_subscriptions").select("allocation").eq("user_id", userId),
+    supabase.from("ai_trading_subscriptions").select("purchase_cost, allocation").eq("user_id", userId),
+    supabase.from("mining_packages").select("investment").eq("user_id", userId),
+    supabase.from("meme_trades").select("quantity, price_usd, status, type").eq("user_id", userId).eq("type", "buy"),
+  ]);
+
+  let total = 0;
+
+  if (!tradesRes.error) {
+    total += (tradesRes.data ?? []).reduce((sum, row) => {
+      const status = String(row.status ?? "").toLowerCase();
+      if (status === "rejected" || status === "cancelled") return sum;
+      return sum + Number(row.amount ?? 0) * Number(row.price ?? 0);
+    }, 0);
+  }
+
+  if (!signalsRes.error) {
+    total += (signalsRes.data ?? []).reduce((sum, row) => sum + Math.max(0, Number(row.price ?? 0)), 0);
+  }
+
+  if (!copyRes.error) {
+    total += (copyRes.data ?? []).reduce((sum, row) => sum + Math.max(0, Number(row.allocation ?? 0)), 0);
+  }
+
+  if (!aiRes.error) {
+    total += (aiRes.data ?? []).reduce((sum, row) => {
+      const cost = Number(row.purchase_cost ?? row.allocation ?? 0);
+      return sum + Math.max(0, cost);
+    }, 0);
+  }
+
+  if (!miningRes.error) {
+    total += (miningRes.data ?? []).reduce((sum, row) => sum + Math.max(0, Number(row.investment ?? 0)), 0);
+  }
+
+  if (!memeRes.error) {
+    total += (memeRes.data ?? []).reduce((sum, row) => {
+      const status = String(row.status ?? "").toLowerCase();
+      if (status === "rejected" || status === "cancelled") return sum;
+      return sum + Number(row.quantity ?? 0) * Number(row.price_usd ?? 0);
+    }, 0);
+  }
+
   return money(total);
 }
 
@@ -308,7 +350,7 @@ export async function getWalletSplit(
     getLifetimeProfit(supabase, userId),
     getDepositCredits(supabase, userId),
     getApprovedDepositTotal(supabase, userId),
-    getLiveBuySpend(supabase, userId),
+    getDepositSpend(supabase, userId),
   ]);
   return {
     cash,

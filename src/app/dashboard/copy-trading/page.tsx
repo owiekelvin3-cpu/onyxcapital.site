@@ -11,7 +11,7 @@ import {
   uncopyTrader,
 } from "@/lib/api/subscriptions";
 import { getCopyTraders } from "@/lib/api/copy-traders";
-import { getUsdBalance } from "@/lib/api/trading";
+import { getDepositBalance } from "@/lib/api/trading";
 import type { CopySubscriptionRow } from "@/lib/supabase/types";
 import {
   groupCopyTradersBySection,
@@ -32,7 +32,7 @@ function scrollToPageTop() {
 
 function copyErrorMessage(err: unknown, t: (key: string) => string) {
   const message = err instanceof Error ? err.message : "";
-  if (/insufficient balance/i.test(message)) return t("copyTrading.insufficientBalance");
+  if (/insufficient(?: deposit)? balance/i.test(message)) return t("copyTrading.insufficientBalance");
   if (/not available/i.test(message)) return t("copyTrading.unavailable");
   return message || t("copyTrading.unavailable");
 }
@@ -70,7 +70,7 @@ export default function CopyTradingPage() {
         setUserId(user.id);
         const [rows, bal] = await Promise.all([
           getCopySubscriptions(supabase, user.id),
-          getUsdBalance(supabase, user.id),
+          getDepositBalance(supabase, user.id),
         ]);
         setSubscriptions(rows);
         setBalance(bal);
@@ -89,7 +89,7 @@ export default function CopyTradingPage() {
       const supabase = createClient();
       const [rows, bal] = await Promise.all([
         getCopySubscriptions(supabase, userId!),
-        getUsdBalance(supabase, userId!),
+        getDepositBalance(supabase, userId!),
       ]);
       setSubscriptions(rows);
       setBalance(bal);

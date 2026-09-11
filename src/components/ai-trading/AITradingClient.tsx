@@ -13,7 +13,7 @@ import {
   purchaseAiBot,
   syncUserAiBots,
 } from "@/lib/api/ai-trading";
-import { getUsdBalance } from "@/lib/api/trading";
+import { getDepositBalance } from "@/lib/api/trading";
 import { formatCurrency, cn } from "@/lib/utils";
 import { StartBotFlow } from "./StartBotFlow";
 import { RunningBotView } from "./RunningBotView";
@@ -65,7 +65,7 @@ export function AITradingClient() {
     await syncUserAiBots(supabase).catch(() => {});
 
     const [bal, loaded] = await Promise.all([
-      getUsdBalance(supabase, user.id),
+      getDepositBalance(supabase, user.id),
       getAiSubscriptions(supabase, user.id),
     ]);
 

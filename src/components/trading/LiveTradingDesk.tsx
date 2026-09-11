@@ -262,7 +262,7 @@ export function LiveTradingDesk() {
       await loadAccount();
     } catch (err) {
       const message = err instanceof Error ? err.message : t("trading.insufficientBalance");
-      if (/insufficient balance/i.test(message)) setError(t("trading.insufficientBalance"));
+      if (/insufficient(?: deposit)? balance/i.test(message)) setError(t("trading.insufficientBalance"));
       else if (/insufficient holdings/i.test(message)) setError(t("trading.insufficientHoldings"));
       else setError(message);
     } finally {

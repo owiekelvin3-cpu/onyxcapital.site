@@ -34,7 +34,7 @@ import { cn, formatCurrency, formatNumber, formatPercent } from "@/lib/utils";
 
 const CATEGORIES = ["crypto", "stock", "forex"] as const;
 const LEVERAGE_OPTIONS = [1, 2, 5, 10, 20, 50] as const;
-const DURATIONS = ["1m", "5m", "15m", "1h", "4h"] as const;
+const DURATIONS = ["1m", "5m", "15m", "30m", "1h", "4h"] as const;
 const LOW_BALANCE = 1;
 
 type Category = (typeof CATEGORIES)[number];

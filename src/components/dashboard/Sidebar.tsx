@@ -95,9 +95,9 @@ function isMoreMenuActive(pathname: string) {
   );
 }
 
-/** Hide bottom tabs on immersive full-screen views (e.g. support chat). */
-export function shouldHideMobileBottomNav(pathname: string) {
-  return pathname.startsWith("/dashboard/support");
+/** Reserved for immersive full-screen views. Support now uses Smartsupp live chat. */
+export function shouldHideMobileBottomNav(_pathname: string) {
+  return false;
 }
 
 function NavLinks({

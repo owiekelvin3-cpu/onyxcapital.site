@@ -17,8 +17,8 @@ import { AccountSuspendedBanner } from "@/components/dashboard/AccountSuspendedB
 import { CopyTradingProfitProvider } from "@/components/dashboard/copy-trading/CopyTradingProfitProvider";
 import { DashboardSearchProvider } from "@/components/dashboard/DashboardSearchProvider";
 
-export function shouldHideMobileBottomNav(pathname: string) {
-  return pathname.startsWith("/dashboard/support");
+export function shouldHideMobileBottomNav(_pathname: string) {
+  return false;
 }
 
 export function DashboardShell({

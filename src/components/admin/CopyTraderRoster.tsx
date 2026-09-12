@@ -113,6 +113,7 @@ export function CopyTraderRoster({
   const [removingId, setRemovingId] = useState<string | null>(null);
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
   const photoInputRef = useRef<HTMLInputElement>(null);
+  const formRef = useRef<HTMLDivElement>(null);
 
   const previewTrader: CopyTraderProfile = {
     name: draft.name.trim() || "Trader",
@@ -234,6 +235,9 @@ export function CopyTraderRoster({
     setDraft(profileToInput(trader));
     setEditingId(trader.id ?? null);
     setShowForm(true);
+    window.setTimeout(() => {
+      formRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }, 50);
   };
 
   const save = async () => {
@@ -352,193 +356,248 @@ export function CopyTraderRoster({
       </div>
 
       {showForm && (
-        <div className="border-b border-border bg-bg-primary/40 px-4 py-4">
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-            <Input
-              label={t("admin.copyTradingFieldName")}
-              value={draft.name}
-              onChange={(e) => setField("name", e.target.value)}
-              placeholder="AlphaTrader"
-            />
-            <Input
-              label={t("admin.copyTradingFieldHandle")}
-              value={draft.handle}
-              onChange={(e) => setField("handle", e.target.value)}
-              placeholder="@alpha.fx"
-            />
-            <Input
-              label={t("admin.copyTradingFieldPrice")}
-              type="number"
-              min={0.01}
-              step="0.01"
-              value={draft.price}
-              onChange={(e) => setField("price", Number(e.target.value))}
-            />
-            <FieldSelect
-              id="copy-section"
-              label={t("admin.copyTradingFieldSection")}
-              value={draft.sectionId}
-              onChange={(value) => setField("sectionId", value)}
-            >
-              {COPY_TRADER_SECTION_META.map((section) => (
-                <option key={section.id} value={section.id}>
-                  {section.title}
-                </option>
-              ))}
-            </FieldSelect>
-            <div className="sm:col-span-2 lg:col-span-4">
-              <Input
-                label={t("admin.copyTradingFieldBio")}
-                value={draft.bio}
-                onChange={(e) => setField("bio", e.target.value)}
-                placeholder="Momentum scalper · BTC & ETH focus"
-              />
-            </div>
-            <Input
-              label={t("admin.copyTradingFieldRoi")}
-              type="number"
-              step="0.1"
-              value={draft.roi}
-              onChange={(e) => setField("roi", Number(e.target.value))}
-            />
-            <Input
-              label={t("admin.copyTradingFieldWinRate")}
-              type="number"
-              min={0}
-              max={100}
-              step="0.1"
-              value={draft.winRate}
-              onChange={(e) => {
-                const next = Number(e.target.value);
-                setField("winRate", Number.isFinite(next) ? Math.min(100, Math.max(0, next)) : 0);
-              }}
-            />
-            <Input
-              label={t("admin.copyTradingFieldFollowers")}
-              type="number"
-              min={0}
-              value={draft.followers}
-              onChange={(e) => setField("followers", Number(e.target.value))}
-            />
-            <Input
-              label={t("admin.copyTradingFieldRating")}
-              type="number"
-              min={0}
-              max={5}
-              step="0.1"
-              value={draft.rating}
-              onChange={(e) => {
-                const next = Number(e.target.value);
-                setField("rating", Number.isFinite(next) ? Math.min(5, Math.max(0, next)) : 0);
-              }}
-            />
-            <Input
-              label={t("admin.copyTradingFieldBadge")}
-              value={draft.badge}
-              onChange={(e) => setField("badge", e.target.value)}
-              placeholder="Pro"
-            />
-            <FieldSelect
-              id="copy-avatar"
-              label={t("admin.copyTradingFieldAvatar")}
-              value={draft.avatarKind}
-              onChange={(value) => setAvatarKind(value as TraderAvatarKind)}
-            >
-              {TRADER_AVATAR_KINDS.map((kind) => (
-                <option key={kind} value={kind}>
-                  {kind === "photo" ? t("admin.copyTradingAvatarFromDevice") : kind}
-                </option>
-              ))}
-            </FieldSelect>
-            {draft.avatarKind === "photo" ? (
-              <div className="space-y-1.5 sm:col-span-2 lg:col-span-2">
-                <p className="block text-xs text-text-tertiary">{t("admin.copyTradingUploadPhoto")}</p>
-                <div className="flex items-center gap-3">
-                  {isRemoteAvatarUrl(draft.avatarSeed) ? (
-                    <TraderAvatar trader={previewTrader} size="lg" />
-                  ) : (
-                    <button
-                      type="button"
-                      onClick={() => photoInputRef.current?.click()}
-                      disabled={uploadingPhoto}
-                      className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full border border-dashed border-border bg-bg-primary text-text-tertiary"
-                      aria-label={t("admin.copyTradingUploadPhoto")}
-                    >
-                      {uploadingPhoto ? <Loader2 className="h-5 w-5" /> : <Image className="h-5 w-5" />}
-                    </button>
-                  )}
-                  <div className="min-w-0">
-                    <Button
-                      type="button"
-                      size="sm"
-                      variant="secondary"
-                      disabled={uploadingPhoto}
-                      onClick={() => photoInputRef.current?.click()}
-                    >
-                      {uploadingPhoto ? <Loader2 className="h-3.5 w-3.5" /> : <Upload className="h-3.5 w-3.5" />}
-                      {isRemoteAvatarUrl(draft.avatarSeed)
-                        ? t("admin.copyTradingChangePhoto")
-                        : t("admin.copyTradingUploadPhoto")}
-                    </Button>
-                    <p className="mt-1 text-xs text-text-tertiary">{t("admin.copyTradingPhotoHint")}</p>
-                  </div>
-                  <input
-                    ref={photoInputRef}
-                    type="file"
-                    accept="image/jpeg,image/png,image/webp"
-                    className="hidden"
-                    onChange={(event) => {
-                      const file = event.target.files?.[0];
-                      if (file) void uploadPhoto(file);
-                      event.target.value = "";
-                    }}
-                  />
-                </div>
-              </div>
-            ) : (
-              <Input
-                label={t("admin.copyTradingFieldSeed")}
-                value={draft.avatarSeed}
-                onChange={(e) => setField("avatarSeed", e.target.value)}
-              />
-            )}
-            <Input
-              label={t("admin.copyTradingFieldColor")}
-              value={draft.ringColor}
-              onChange={(e) => setField("ringColor", e.target.value)}
-            />
-            <Input
-              label={t("admin.copyTradingFieldSort")}
-              type="number"
-              value={draft.sortOrder}
-              onChange={(e) => setField("sortOrder", Number(e.target.value))}
-            />
+        <div ref={formRef} className="space-y-5 border-b border-border bg-bg-primary/40 px-4 py-5">
+          <div>
+            <p className="text-sm font-semibold text-text-primary">
+              {editingId
+                ? t("admin.copyTradingEditing", { name: draft.name || "trader" })
+                : t("admin.copyTradingAddTrader")}
+            </p>
+            <p className="mt-1 text-xs text-text-tertiary">
+              Change name, bio, photo, return, win rate, followers, price, section, and listing flags.
+            </p>
           </div>
-          <div className="mt-3 flex flex-wrap items-center gap-4">
-            <label className="inline-flex items-center gap-2 text-sm text-text-secondary">
-              <input
-                type="checkbox"
-                checked={draft.verified}
-                onChange={(e) => setField("verified", e.target.checked)}
+
+          <section className="space-y-3">
+            <p className="text-[11px] font-semibold uppercase tracking-wider text-text-tertiary">
+              {t("admin.copyTradingGroupProfile")}
+            </p>
+            <div className="grid gap-3 sm:grid-cols-2">
+              <Input
+                label={t("admin.copyTradingFieldName")}
+                value={draft.name}
+                onChange={(e) => setField("name", e.target.value)}
+                placeholder="AlphaTrader"
               />
-              {t("admin.copyTradingFieldVerified")}
-            </label>
-            <label className="inline-flex items-center gap-2 text-sm text-text-secondary">
-              <input
-                type="checkbox"
-                checked={draft.isActive}
-                onChange={(e) => setField("isActive", e.target.checked)}
+              <Input
+                label={t("admin.copyTradingFieldHandle")}
+                value={draft.handle}
+                onChange={(e) => setField("handle", e.target.value)}
+                placeholder="@alpha.fx"
               />
-              {t("admin.copyTradingFieldActive")}
-            </label>
-            <div className="ml-auto flex gap-2">
-              <Button type="button" variant="secondary" size="sm" onClick={resetForm} disabled={busy}>
-                {t("admin.copyTradingCancelEdit")}
-              </Button>
-              <Button type="button" size="sm" onClick={() => void save()} disabled={busy || uploadingPhoto}>
-                {editingId ? t("admin.copyTradingEditTrader") : t("admin.copyTradingAddTrader")}
-              </Button>
+              <Input
+                label={t("admin.copyTradingFieldBadge")}
+                value={draft.badge}
+                onChange={(e) => setField("badge", e.target.value)}
+                placeholder="Pro"
+              />
+              <FieldSelect
+                id="copy-section"
+                label={t("admin.copyTradingFieldSection")}
+                value={draft.sectionId}
+                onChange={(value) => setField("sectionId", value)}
+              >
+                {COPY_TRADER_SECTION_META.map((section) => (
+                  <option key={section.id} value={section.id}>
+                    {section.title}
+                  </option>
+                ))}
+              </FieldSelect>
+              <div className="sm:col-span-2 space-y-1.5">
+                <label htmlFor="copy-bio" className="block text-xs text-text-tertiary">
+                  {t("admin.copyTradingFieldBio")}
+                </label>
+                <textarea
+                  id="copy-bio"
+                  value={draft.bio}
+                  onChange={(e) => setField("bio", e.target.value)}
+                  rows={4}
+                  placeholder="Momentum scalper · BTC & ETH focus"
+                  className="w-full rounded border border-border bg-bg-primary px-3 py-2.5 text-sm text-text-primary outline-none focus:border-brand"
+                />
+              </div>
             </div>
+          </section>
+
+          <section className="space-y-3">
+            <p className="text-[11px] font-semibold uppercase tracking-wider text-text-tertiary">
+              {t("admin.copyTradingGroupPerformance")}
+            </p>
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+              <Input
+                label={t("admin.copyTradingFieldRoi")}
+                type="number"
+                step="0.1"
+                value={draft.roi}
+                onChange={(e) => setField("roi", Number(e.target.value))}
+              />
+              <Input
+                label={t("admin.copyTradingFieldWinRate")}
+                type="number"
+                min={0}
+                max={100}
+                step="0.1"
+                value={draft.winRate}
+                onChange={(e) => {
+                  const next = Number(e.target.value);
+                  setField("winRate", Number.isFinite(next) ? Math.min(100, Math.max(0, next)) : 0);
+                }}
+              />
+              <Input
+                label={t("admin.copyTradingFieldFollowers")}
+                type="number"
+                min={0}
+                value={draft.followers}
+                onChange={(e) => setField("followers", Number(e.target.value))}
+              />
+              <Input
+                label={t("admin.copyTradingFieldRating")}
+                type="number"
+                min={0}
+                max={5}
+                step="0.1"
+                value={draft.rating}
+                onChange={(e) => {
+                  const next = Number(e.target.value);
+                  setField("rating", Number.isFinite(next) ? Math.min(5, Math.max(0, next)) : 0);
+                }}
+              />
+            </div>
+          </section>
+
+          <section className="space-y-3">
+            <p className="text-[11px] font-semibold uppercase tracking-wider text-text-tertiary">
+              {t("admin.copyTradingGroupListing")}
+            </p>
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+              <Input
+                label={t("admin.copyTradingFieldPrice")}
+                type="number"
+                min={0.01}
+                step="0.01"
+                value={draft.price}
+                onChange={(e) => setField("price", Number(e.target.value))}
+              />
+              <Input
+                label={t("admin.copyTradingFieldSort")}
+                type="number"
+                value={draft.sortOrder}
+                onChange={(e) => setField("sortOrder", Number(e.target.value))}
+              />
+              <div className="flex flex-col justify-end gap-2 pb-1">
+                <label className="inline-flex items-center gap-2 text-sm text-text-secondary">
+                  <input
+                    type="checkbox"
+                    checked={draft.verified}
+                    onChange={(e) => setField("verified", e.target.checked)}
+                  />
+                  {t("admin.copyTradingFieldVerified")}
+                </label>
+                <label className="inline-flex items-center gap-2 text-sm text-text-secondary">
+                  <input
+                    type="checkbox"
+                    checked={draft.isActive}
+                    onChange={(e) => setField("isActive", e.target.checked)}
+                  />
+                  {t("admin.copyTradingFieldActive")}
+                </label>
+              </div>
+            </div>
+          </section>
+
+          <section className="space-y-3">
+            <p className="text-[11px] font-semibold uppercase tracking-wider text-text-tertiary">
+              {t("admin.copyTradingGroupAvatar")}
+            </p>
+            <div className="grid gap-3 sm:grid-cols-2">
+              <FieldSelect
+                id="copy-avatar"
+                label={t("admin.copyTradingFieldAvatar")}
+                value={draft.avatarKind}
+                onChange={(value) => setAvatarKind(value as TraderAvatarKind)}
+              >
+                {TRADER_AVATAR_KINDS.map((kind) => (
+                  <option key={kind} value={kind}>
+                    {kind === "photo" ? t("admin.copyTradingAvatarFromDevice") : kind}
+                  </option>
+                ))}
+              </FieldSelect>
+              <div className="flex items-end gap-3">
+                <Input
+                  label={t("admin.copyTradingFieldColor")}
+                  value={draft.ringColor}
+                  onChange={(e) => setField("ringColor", e.target.value)}
+                />
+                <input
+                  type="color"
+                  value={/^#[0-9a-f]{6}$/i.test(draft.ringColor) ? draft.ringColor : "#e2ff4c"}
+                  onChange={(e) => setField("ringColor", e.target.value)}
+                  className="mb-0.5 h-10 w-12 shrink-0 cursor-pointer rounded border border-border bg-bg-primary"
+                  aria-label={t("admin.copyTradingFieldColor")}
+                />
+              </div>
+              {draft.avatarKind === "photo" ? (
+                <div className="space-y-1.5 sm:col-span-2">
+                  <p className="block text-xs text-text-tertiary">{t("admin.copyTradingUploadPhoto")}</p>
+                  <div className="flex items-center gap-3">
+                    {isRemoteAvatarUrl(draft.avatarSeed) ? (
+                      <TraderAvatar trader={previewTrader} size="lg" />
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => photoInputRef.current?.click()}
+                        disabled={uploadingPhoto}
+                        className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full border border-dashed border-border bg-bg-primary text-text-tertiary"
+                        aria-label={t("admin.copyTradingUploadPhoto")}
+                      >
+                        {uploadingPhoto ? <Loader2 className="h-5 w-5" /> : <Image className="h-5 w-5" />}
+                      </button>
+                    )}
+                    <div className="min-w-0">
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="secondary"
+                        disabled={uploadingPhoto}
+                        onClick={() => photoInputRef.current?.click()}
+                      >
+                        {uploadingPhoto ? <Loader2 className="h-3.5 w-3.5" /> : <Upload className="h-3.5 w-3.5" />}
+                        {isRemoteAvatarUrl(draft.avatarSeed)
+                          ? t("admin.copyTradingChangePhoto")
+                          : t("admin.copyTradingUploadPhoto")}
+                      </Button>
+                      <p className="mt-1 text-xs text-text-tertiary">{t("admin.copyTradingPhotoHint")}</p>
+                    </div>
+                    <input
+                      ref={photoInputRef}
+                      type="file"
+                      accept="image/jpeg,image/png,image/webp"
+                      className="hidden"
+                      onChange={(event) => {
+                        const file = event.target.files?.[0];
+                        if (file) void uploadPhoto(file);
+                        event.target.value = "";
+                      }}
+                    />
+                  </div>
+                </div>
+              ) : (
+                <Input
+                  label={t("admin.copyTradingFieldSeed")}
+                  value={draft.avatarSeed}
+                  onChange={(e) => setField("avatarSeed", e.target.value)}
+                />
+              )}
+            </div>
+          </section>
+
+          <div className="flex flex-wrap justify-end gap-2 border-t border-border pt-4">
+            <Button type="button" variant="secondary" size="sm" onClick={resetForm} disabled={busy}>
+              {t("admin.copyTradingCancelEdit")}
+            </Button>
+            <Button type="button" size="sm" onClick={() => void save()} disabled={busy || uploadingPhoto}>
+              {editingId ? t("admin.copyTradingEditTrader") : t("admin.copyTradingAddTrader")}
+            </Button>
           </div>
         </div>
       )}
@@ -575,12 +634,13 @@ export function CopyTraderRoster({
                         <p className="mt-0.5 truncate text-xs text-text-tertiary">{trader.bio}</p>
                       </div>
                     </div>
-                    <div className="flex shrink-0 items-center gap-3">
-                      <p className="text-sm font-semibold tabular-nums text-text-primary">
+                    <div className="flex shrink-0 items-center gap-2">
+                      <p className="mr-1 text-sm font-semibold tabular-nums text-text-primary">
                         {formatCurrency(trader.price)}
                       </p>
-                      <Button type="button" size="sm" variant="ghost" onClick={() => startEdit(trader)}>
+                      <Button type="button" size="sm" variant="secondary" onClick={() => startEdit(trader)}>
                         <Pencil className="h-3.5 w-3.5" />
+                        {t("admin.copyTradingEditDetails")}
                       </Button>
                       <Button
                         type="button"
@@ -611,10 +671,11 @@ export function CopyTraderRoster({
                     className="flex flex-col gap-2 px-4 py-3 sm:flex-row sm:items-center sm:justify-between"
                   >
                     <p className="font-medium text-text-primary">{trader.name}</p>
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-2">
                       <p className="text-sm font-semibold">{formatCurrency(trader.price)}</p>
-                      <Button type="button" size="sm" variant="ghost" onClick={() => startEdit(trader)}>
+                      <Button type="button" size="sm" variant="secondary" onClick={() => startEdit(trader)}>
                         <Pencil className="h-3.5 w-3.5" />
+                        {t("admin.copyTradingEditDetails")}
                       </Button>
                       <Button
                         type="button"

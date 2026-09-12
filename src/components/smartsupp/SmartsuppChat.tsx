@@ -7,14 +7,14 @@ import { hasSupabaseEnv } from "@/lib/env";
 import { Comments } from "@/components/icons";
 import { cn } from "@/lib/utils";
 import {
-  isTawkEnabled,
-  onTawkChatOpenChange,
-  openTawkChat,
-  syncTawkWidget,
-} from "@/lib/tawk";
+  isSmartsuppEnabled,
+  onSmartsuppChatOpenChange,
+  openSmartsuppChat,
+  syncSmartsuppWidget,
+} from "@/lib/smartsupp";
 
 const SIZE = 52;
-const STORAGE_KEY = "onyx-tawk-bubble";
+const STORAGE_KEY = "onyx-smartsupp-bubble";
 const DRAG_THRESHOLD = 8;
 
 type Pos = { x: number; y: number };
@@ -48,7 +48,7 @@ function readStoredPos(): Pos {
   }
 }
 
-export function TawkChat() {
+export function SmartsuppChat() {
   const pathname = usePathname() || "/";
   const hidden = pathname.startsWith("/admin");
   const [pos, setPos] = useState<Pos | null>(() =>
@@ -66,9 +66,9 @@ export function TawkChat() {
   } | null>(null);
 
   useEffect(() => {
-    if (!isTawkEnabled()) return;
+    if (!isSmartsuppEnabled()) return;
 
-    syncTawkWidget({ hidden });
+    syncSmartsuppWidget({ hidden });
 
     let cancelled = false;
 
@@ -82,7 +82,7 @@ export function TawkChat() {
         } = await supabase.auth.getUser();
         if (cancelled || !user) return;
         const metaName = user.user_metadata?.full_name;
-        syncTawkWidget({
+        syncSmartsuppWidget({
           hidden,
           userId: user.id,
           email: user.email ?? null,
@@ -100,9 +100,9 @@ export function TawkChat() {
   }, [pathname, hidden]);
 
   useEffect(() => {
-    if (!isTawkEnabled() || hidden) return;
+    if (!isSmartsuppEnabled() || hidden) return;
     setPos(readStoredPos());
-    return onTawkChatOpenChange(setChatOpen);
+    return onSmartsuppChatOpenChange(setChatOpen);
   }, [hidden]);
 
   useEffect(() => {
@@ -158,10 +158,10 @@ export function TawkChat() {
     } catch {
       /* already released */
     }
-    if (!drag.moved) openTawkChat();
+    if (!drag.moved) openSmartsuppChat();
   }
 
-  if (!isTawkEnabled() || hidden || chatOpen || !pos) return null;
+  if (!isSmartsuppEnabled() || hidden || chatOpen || !pos) return null;
 
   return (
     <button

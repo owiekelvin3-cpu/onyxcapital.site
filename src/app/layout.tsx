@@ -8,7 +8,7 @@ import { I18nProvider } from "@/components/i18n/I18nProvider";
 import { ThemeProvider } from "@/components/theme/ThemeProvider";
 import { ThemeScript } from "@/components/theme/ThemeScript";
 import { PwaProvider } from "@/components/pwa/PwaProvider";
-import { TawkChat } from "@/components/tawk/TawkChat";
+import { SmartsuppChat } from "@/components/smartsupp/SmartsuppChat";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -120,7 +120,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         <style
           dangerouslySetInnerHTML={{
             __html:
-              'html:not(.tawk-chat-open) iframe[src*="tawk"],html:not(.tawk-chat-open) iframe[title*="chat widget"],html:not(.tawk-chat-open) [id*="tawk"],html:not(.tawk-chat-open) [id*="Tawk"],html:not(.tawk-chat-open) [class*="tawk-min"]{opacity:0!important;visibility:hidden!important;pointer-events:none!important}',
+              'html:not(.smartsupp-chat-open) iframe[src*="smartsupp"],html:not(.smartsupp-chat-open) #chat-application{opacity:0!important;visibility:hidden!important;pointer-events:none!important}',
           }}
         />
       </head>
@@ -129,7 +129,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
           <PwaProvider>
             <I18nProvider>
               {children}
-              <TawkChat />
+              <SmartsuppChat />
             </I18nProvider>
           </PwaProvider>
         </ThemeProvider>

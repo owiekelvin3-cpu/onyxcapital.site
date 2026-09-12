@@ -152,7 +152,8 @@ export function getGiftCardBrand(brandId: string): GiftCardBrand | undefined {
   return GIFT_CARD_BRANDS.find((b) => b.id === brandId);
 }
 
-export function formatDepositMethod(method: string): string {
+export function formatDepositMethod(method: string | null | undefined): string {
+  if (!method) return "Deposit";
   if (method === "credit_card") return "Credit / Debit Card";
   if (method.startsWith("gift_card_")) {
     const brandId = method.replace("gift_card_", "");

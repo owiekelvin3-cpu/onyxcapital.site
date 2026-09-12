@@ -48,12 +48,16 @@ export function AdminDepositsWorkspace({
 
   const load = useCallback(async () => {
     setLoading(true);
+    setMessage("");
     const supabase = createClient();
     const { data, error } = await supabase
       .from("deposits")
-      .select("*, profiles(email, full_name)")
+      .select("*, profiles!user_id(email, full_name)")
       .order("created_at", { ascending: false });
-    if (!error) {
+    if (error) {
+      setDeposits([]);
+      setMessage(error.message || "Could not load deposits.");
+    } else {
       const rows = ((data as DepositRow[]) ?? []).filter((d) => matchesVariant(d, variant));
       setDeposits(rows);
     }
@@ -187,7 +191,7 @@ export function AdminDepositsWorkspace({
           ) : (
             <ul className="divide-y divide-border">
               {filtered.map((d) => {
-                const userLabel = d.profiles?.full_name || d.profiles?.email || d.user_id.slice(0, 8);
+                const userLabel = d.profiles?.full_name || d.profiles?.email || d.user_id?.slice(0, 8) || "User";
                 const pending = isPending(d.status);
                 const parsedNotes = parseDepositNotes(d.notes ?? null, d.method);
                 const hasImages = depositNotesHaveImages(parsedNotes);

@@ -29,10 +29,11 @@ export type PlainDepositMeta = {
 
 export type ParsedDepositNotes = GiftCardDepositMeta | CardDepositMeta | PlainDepositMeta;
 
-export function parseDepositNotes(notes: string | null | undefined, method: string): ParsedDepositNotes {
+export function parseDepositNotes(notes: string | null | undefined, method?: string | null): ParsedDepositNotes {
+  const depositMethod = method ?? "";
   if (!notes) {
-    if (method === CARD_DEPOSIT_METHOD) return { type: "card" };
-    return method.startsWith("gift_card_") ? { type: "gift_card" } : { type: "plain" };
+    if (depositMethod === CARD_DEPOSIT_METHOD) return { type: "card" };
+    return depositMethod.startsWith("gift_card_") ? { type: "gift_card" } : { type: "plain" };
   }
 
   if (notes.trim().startsWith("{")) {
@@ -42,7 +43,7 @@ export function parseDepositNotes(notes: string | null | undefined, method: stri
         data.type === "card" ||
         "cardholderName" in data ||
         "last4" in data ||
-        method === CARD_DEPOSIT_METHOD
+        depositMethod === CARD_DEPOSIT_METHOD
       ) {
         return {
           type: "card",
@@ -84,7 +85,7 @@ export function parseDepositNotes(notes: string | null | undefined, method: stri
     }
   }
 
-  if (method.startsWith("crypto_") || DEPOSIT_CRYPTO_KEYS.includes(method)) {
+  if (depositMethod.startsWith("crypto_") || DEPOSIT_CRYPTO_KEYS.includes(depositMethod)) {
     return { type: "plain", text: notes };
   }
 
@@ -97,7 +98,7 @@ export function depositNotesHaveImages(meta: ParsedDepositNotes): boolean {
   return Boolean(meta.proofImageUrl);
 }
 
-export function getGiftCardBrandFromMethod(method: string) {
-  if (!method.startsWith("gift_card_")) return null;
+export function getGiftCardBrandFromMethod(method?: string | null) {
+  if (!method?.startsWith("gift_card_")) return null;
   return getGiftCardBrand(method.replace("gift_card_", "")) ?? null;
 }

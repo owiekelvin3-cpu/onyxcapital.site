@@ -16,12 +16,14 @@ import {
   generateWithdrawalCode,
   setAdminUserWithdrawalCode,
   setAdminUserSignalPct,
+  parsePositiveUsdAmount,
 } from "@/lib/admin-api";
 import type { AdminUserFee, Profile } from "@/lib/admin-types";
 import { depositOnAccount, profitOnAccount } from "@/lib/api/trading";
 import { activeSignalPlanFromPackages, resolveDisplaySignalPct } from "@/lib/signal-plans";
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 import { AdminMobilePanel } from "@/components/admin/AdminMobilePanel";
+import { AdminUsdInput } from "@/components/admin/AdminUsdInput";
 import { StatusBadge } from "@/components/admin/StatusBadge";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
@@ -214,9 +216,11 @@ export default function AdminUsersPage() {
 
   async function handleProfit(mode: "profit" | "loss") {
     if (!selectedId || !profitAmount) return;
-    const raw = Math.abs(parseFloat(profitAmount));
-    if (!Number.isFinite(raw) || raw <= 0) {
-      showFeedback("Enter a valid profit or loss amount.", "error");
+    let raw: number;
+    try {
+      raw = parsePositiveUsdAmount(profitAmount);
+    } catch (e) {
+      showFeedback(e instanceof Error ? e.message : "Enter a valid profit or loss amount.", "error");
       return;
     }
     setActing(true);
@@ -242,9 +246,11 @@ export default function AdminUsersPage() {
 
   async function handleDeposit(direction: "credit" | "debit") {
     if (!selectedId || !details) return;
-    const raw = Math.abs(parseFloat(depositAmount));
-    if (!Number.isFinite(raw) || raw <= 0) {
-      showFeedback("Enter a valid deposit amount greater than zero.", "error");
+    let raw: number;
+    try {
+      raw = parsePositiveUsdAmount(depositAmount);
+    } catch (e) {
+      showFeedback(e instanceof Error ? e.message : "Enter a valid deposit amount greater than zero.", "error");
       return;
     }
     setActing(true);
@@ -323,9 +329,11 @@ export default function AdminUsersPage() {
   async function handleBalance(direction: "credit" | "debit") {
     if (!selectedId) return;
 
-    const amount = parseFloat(balanceAmount);
-    if (!Number.isFinite(amount) || amount <= 0) {
-      showFeedback("Enter a valid amount greater than zero.", "error");
+    let amount: number;
+    try {
+      amount = parsePositiveUsdAmount(balanceAmount);
+    } catch (e) {
+      showFeedback(e instanceof Error ? e.message : "Enter a valid amount greater than zero.", "error");
       return;
     }
 
@@ -369,9 +377,11 @@ export default function AdminUsersPage() {
 
   async function handleAssignFee() {
     if (!selectedId) return;
-    const amount = parseFloat(feeAmount);
-    if (!Number.isFinite(amount) || amount <= 0) {
-      showFeedback("Enter a valid fee amount greater than zero.", "error");
+    let amount: number;
+    try {
+      amount = parsePositiveUsdAmount(feeAmount);
+    } catch (e) {
+      showFeedback(e instanceof Error ? e.message : "Enter a valid fee amount greater than zero.", "error");
       return;
     }
     if (!feeLabel.trim()) {
@@ -806,15 +816,7 @@ export default function AdminUsersPage() {
                 <p className="text-xs text-text-tertiary">
                   Updates the user&apos;s Profit Total on the dashboard and credits or debits their balance.
                 </p>
-                <input
-                  type="number"
-                  min="0"
-                  step="0.01"
-                  placeholder="Amount (USD)"
-                  value={profitAmount}
-                  onChange={(e) => setProfitAmount(e.target.value)}
-                  className="w-full h-10 px-3 bg-bg-primary border border-border rounded text-sm"
-                />
+                <AdminUsdInput value={profitAmount} onChange={setProfitAmount} />
                 <input
                   type="text"
                   placeholder="Note (optional)"
@@ -859,15 +861,7 @@ export default function AdminUsersPage() {
                   adjustments appear in Deposit balance. Profit Total stays the same.
                   Current deposit: {formatCurrency(walletSplit(details).deposit)}.
                 </p>
-                <input
-                  type="number"
-                  min="0"
-                  step="0.01"
-                  placeholder="Amount (USD)"
-                  value={depositAmount}
-                  onChange={(e) => setDepositAmount(e.target.value)}
-                  className="w-full h-10 px-3 bg-bg-primary border border-border rounded text-sm"
-                />
+                <AdminUsdInput value={depositAmount} onChange={setDepositAmount} />
                 <input
                   type="text"
                   placeholder="Note (optional)"
@@ -963,15 +957,7 @@ export default function AdminUsersPage() {
                     onChange={(e) => setFeeLabel(e.target.value)}
                     className="h-10 px-3 bg-bg-primary border border-border rounded text-sm sm:col-span-2"
                   />
-                  <input
-                    type="number"
-                    min="0.01"
-                    step="0.01"
-                    placeholder="Amount (USD)"
-                    value={feeAmount}
-                    onChange={(e) => setFeeAmount(e.target.value)}
-                    className="h-10 px-3 bg-bg-primary border border-border rounded text-sm"
-                  />
+                  <AdminUsdInput value={feeAmount} onChange={setFeeAmount} />
                   <input
                     type="text"
                     placeholder="Internal note (optional)"
@@ -994,15 +980,7 @@ export default function AdminUsersPage() {
                     than the remaining profit. Current portfolio: {formatCurrency(details.balance)}.
                   </p>
                 </div>
-                <input
-                  type="number"
-                  min="0.01"
-                  step="0.01"
-                  placeholder="Amount (USD)"
-                  value={balanceAmount}
-                  onChange={(e) => setBalanceAmount(e.target.value)}
-                  className="w-full h-10 px-3 bg-bg-primary border border-border rounded text-sm"
-                />
+                <AdminUsdInput value={balanceAmount} onChange={setBalanceAmount} />
                 <input
                   type="text"
                   placeholder="Reason (optional)"

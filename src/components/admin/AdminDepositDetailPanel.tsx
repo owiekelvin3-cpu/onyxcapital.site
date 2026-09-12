@@ -305,17 +305,17 @@ export function AdminDepositDetailPanel({
                 <Input
                   id="deposit-actual-amount"
                   label={t("admin.actualAmountReceived")}
-                  type="number"
+                  type="text"
                   inputMode="decimal"
-                  min={0.01}
-                  step="0.01"
+                  enterKeyHint="done"
+                  autoComplete="off"
+                  autoCorrect="off"
+                  spellCheck={false}
                   value={amountDraft}
                   error={amountError}
-                  onKeyDown={(e) => {
-                    if (["e", "E", "+", "-"].includes(e.key)) e.preventDefault();
-                  }}
+                  onWheel={(e) => e.currentTarget.blur()}
                   onChange={(e) => {
-                    setAmountDraft(e.target.value);
+                    setAmountDraft(e.target.value.replace(/[^\d.,]/g, ""));
                     setAmountError("");
                   }}
                 />

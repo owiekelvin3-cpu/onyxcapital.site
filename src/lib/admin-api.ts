@@ -226,8 +226,37 @@ export async function adjustAdminMemeCoinProfit(params: {
   };
 }
 
+/** Turn typed money into a plain `1234.56` string. Handles `1,000`, `1.000,50`, and `100,50`. */
+export function normalizeUsdAmountInput(raw: string) {
+  let s = raw.trim().replace(/[$\s\u00A0\u202F]/g, "");
+  if (!s) return "";
+
+  const lastComma = s.lastIndexOf(",");
+  const lastDot = s.lastIndexOf(".");
+
+  if (lastComma !== -1 && lastDot !== -1) {
+    s = lastComma > lastDot ? s.replace(/\./g, "").replace(",", ".") : s.replace(/,/g, "");
+  } else if (lastComma !== -1) {
+    const fraction = s.slice(lastComma + 1);
+    s =
+      fraction.length <= 2 && s.indexOf(",") === lastComma
+        ? `${s.slice(0, lastComma).replace(/,/g, "")}.${fraction}`
+        : s.replace(/,/g, "");
+  }
+
+  return s;
+}
+
+export function tryParseUsdAmount(raw: string | number) {
+  try {
+    return parsePositiveUsdAmount(raw);
+  } catch {
+    return null;
+  }
+}
+
 export function parsePositiveUsdAmount(raw: string | number) {
-  const n = typeof raw === "number" ? raw : Number(String(raw).replace(/,/g, "").trim());
+  const n = typeof raw === "number" ? raw : Number(normalizeUsdAmountInput(String(raw)));
   if (!Number.isFinite(n)) {
     throw new Error("Enter a valid amount greater than zero.");
   }

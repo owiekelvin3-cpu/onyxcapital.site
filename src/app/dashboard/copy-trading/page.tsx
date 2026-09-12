@@ -255,7 +255,7 @@ export default function CopyTradingPage() {
                       {loadingTrader === sub.trader_name ? (
                         <Loader2 className="h-3.5 w-3.5 animate-spin" />
                       ) : (
-                        "Uncopy"
+                        t("copyTrading.uncopy")
                       )}
                     </Button>
                   </div>
@@ -306,7 +306,7 @@ export default function CopyTradingPage() {
               </p>
             </div>
 
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
+            <div className="mx-auto grid w-full max-w-xl grid-cols-1 gap-5 md:max-w-none md:grid-cols-2">
               {section.traders.map((trader, index) => (
                 <CopyTraderCard
                   key={trader.id ?? trader.name}

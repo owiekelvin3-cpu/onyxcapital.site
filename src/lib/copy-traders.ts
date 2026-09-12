@@ -9,8 +9,8 @@ export const TRADER_AVATAR_KINDS: TraderAvatarKind[] = [
   "emoji",
 ];
 
-export function isRemoteAvatarUrl(value: string): boolean {
-  return /^https?:\/\//i.test(value.trim());
+export function isRemoteAvatarUrl(value: string | null | undefined): boolean {
+  return /^https?:\/\//i.test(String(value ?? "").trim());
 }
 
 export type CopyTraderProfile = {
@@ -112,25 +112,31 @@ export function sectionTitle(sectionId: string): string {
   return COPY_TRADER_SECTION_META.find((s) => s.id === sectionId)?.title ?? sectionId;
 }
 
+function asFiniteNumber(value: unknown, fallback = 0) {
+  const n = typeof value === "number" ? value : Number(value);
+  return Number.isFinite(n) ? n : fallback;
+}
+
 export function mapCopyTraderRow(row: CopyTraderRow): CopyTraderProfile {
   const kind = TRADER_AVATAR_KINDS.includes(row.avatar_kind) ? row.avatar_kind : "illustrated";
+  const avatarSeed = String(row.avatar_seed ?? "").trim() || "trader";
   return {
     id: row.id,
-    name: row.name,
-    handle: row.handle,
-    bio: row.bio,
-    roi: Number(row.roi),
-    followers: Number(row.followers),
-    winRate: Number(row.win_rate),
-    rating: Number(row.rating),
-    avatarKind: isRemoteAvatarUrl(row.avatar_seed) ? "photo" : kind,
-    avatarSeed: row.avatar_seed,
-    ringColor: row.ring_color,
-    verified: row.verified,
+    name: String(row.name ?? "Trader"),
+    handle: String(row.handle ?? ""),
+    bio: String(row.bio ?? ""),
+    roi: asFiniteNumber(row.roi),
+    followers: Math.max(0, Math.round(asFiniteNumber(row.followers))),
+    winRate: asFiniteNumber(row.win_rate),
+    rating: asFiniteNumber(row.rating, 4.5),
+    avatarKind: isRemoteAvatarUrl(avatarSeed) ? "photo" : kind,
+    avatarSeed,
+    ringColor: String(row.ring_color ?? "#e2ff4c"),
+    verified: Boolean(row.verified),
     badge: row.badge ?? undefined,
-    price: Number(row.price),
-    sectionId: row.section_id,
-    sortOrder: row.sort_order,
+    price: asFiniteNumber(row.price),
+    sectionId: String(row.section_id ?? "featured"),
+    sortOrder: asFiniteNumber(row.sort_order),
     isActive: row.is_active,
   };
 }
@@ -189,13 +195,13 @@ export function traderAvatarUrl(trader: CopyTraderProfile): string {
 }
 
 export function traderInitials(name: string) {
-  return name
+  return String(name ?? "")
     .replace(/([a-z])([A-Z])/g, "$1 $2")
     .split(/\s+/)
     .map((w) => w[0])
     .join("")
     .slice(0, 2)
-    .toUpperCase();
+    .toUpperCase() || "TR";
 }
 
 export function gradientForSeed(seed: string): [string, string] {
@@ -207,8 +213,9 @@ export function gradientForSeed(seed: string): [string, string] {
     ["#ec4899", "#f43f5e"],
     ["#eab308", "#f97316"],
   ];
+  const text = String(seed ?? "");
   let hash = 0;
-  for (let i = 0; i < seed.length; i++) hash = (hash + seed.charCodeAt(i) * (i + 1)) % palettes.length;
+  for (let i = 0; i < text.length; i++) hash = (hash + text.charCodeAt(i) * (i + 1)) % palettes.length;
   return palettes[hash] ?? palettes[0];
 }
 
@@ -219,4 +226,57 @@ export function slugFromName(name: string) {
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-|-$/g, "")
     .slice(0, 40) || "trader";
+}
+
+export type CopyTraderRiskLevel = "low" | "medium" | "high";
+
+function hashSeed(value: string | null | undefined) {
+  const text = String(value ?? "");
+  let hash = 2166136261;
+  for (let i = 0; i < text.length; i++) {
+    hash ^= text.charCodeAt(i);
+    hash = Math.imul(hash, 16777619);
+  }
+  return hash >>> 0;
+}
+
+export function traderSpecialtyKeys(sectionId: string): string[] {
+  switch (sectionId) {
+    case "crypto":
+      return ["crypto"];
+    case "forex":
+      return ["forex"];
+    case "indices":
+      return ["indices", "commodities"];
+    case "scalping":
+      return ["scalping", "forex"];
+    default:
+      return ["crypto", "forex"];
+  }
+}
+
+export function traderTradeCount(trader: CopyTraderProfile): number {
+  const hash = hashSeed(trader.id ?? trader.name);
+  const ratio = 0.18 + (hash % 38) / 100;
+  return Math.max(96, Math.round(trader.followers * ratio));
+}
+
+export function traderRiskLevel(trader: CopyTraderProfile): CopyTraderRiskLevel {
+  if (trader.winRate >= 74 && trader.roi <= 85) return "low";
+  if (trader.winRate >= 58 || trader.roi <= 130) return "medium";
+  return "high";
+}
+
+export function traderPerformanceSeries(trader: CopyTraderProfile): number[] {
+  let hash = hashSeed(trader.id ?? trader.name);
+  const points = 12;
+  const series: number[] = [];
+  let value = 100;
+  for (let i = 0; i < points; i++) {
+    hash = Math.imul(hash ^ (hash >>> 13), 1274126177) >>> 0;
+    const noise = ((hash % 1000) / 1000 - 0.38) * 3.4;
+    value = Math.max(82, value + trader.roi / points / 3.2 + noise);
+    series.push(Number(value.toFixed(2)));
+  }
+  return series;
 }

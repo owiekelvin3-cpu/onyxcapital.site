@@ -17,6 +17,15 @@ import type { SignalPackageRow } from "@/lib/supabase/types";
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
+const EMPTY_WALLET: WalletSplit = {
+  cash: 0,
+  profit: 0,
+  deposit: 0,
+  credits: 0,
+  userDeposits: 0,
+  buySpend: 0,
+};
+
 async function walletForUser(
   supabase: Awaited<ReturnType<typeof createClient>>,
   userId: string
@@ -24,7 +33,11 @@ async function walletForUser(
   try {
     return await getWalletSplit(createServiceClient(), userId);
   } catch {
-    return getWalletSplit(supabase, userId);
+    try {
+      return await getWalletSplit(supabase, userId);
+    } catch {
+      return EMPTY_WALLET;
+    }
   }
 }
 
@@ -42,41 +55,41 @@ export default async function DashboardPage() {
         .maybeSingle()
     : { data: null };
 
+  const emptySummary = {
+    cashBalance: 0,
+    holdingsValue: 0,
+    totalValue: 0,
+    holdingsCount: 0,
+    currency: "USD",
+    totalDeposits: 0,
+    totalWithdrawals: 0,
+  };
+
   const [summary, recentTrades, openOrders, wallet, marketPairs, tradesCount, packagesRes] =
     await Promise.all([
-      user ? getPortfolioSummary(supabase, user.id) : Promise.resolve({
-        cashBalance: 0,
-        holdingsValue: 0,
-        totalValue: 0,
-        holdingsCount: 0,
-        currency: "USD",
-        totalDeposits: 0,
-        totalWithdrawals: 0,
-      }),
-      user ? getRecentTrades(supabase, user.id, 5) : Promise.resolve([]),
-      user ? getPendingTradesCount(supabase, user.id) : Promise.resolve(0),
-      user ? walletForUser(supabase, user.id) : Promise.resolve({
-        cash: 0,
-        profit: 0,
-        deposit: 0,
-        credits: 0,
-        userDeposits: 0,
-        buySpend: 0,
-      }),
+      user ? getPortfolioSummary(supabase, user.id).catch(() => emptySummary) : emptySummary,
+      user ? getRecentTrades(supabase, user.id, 5).catch(() => []) : [],
+      user ? getPendingTradesCount(supabase, user.id).catch(() => 0) : 0,
+      user ? walletForUser(supabase, user.id) : EMPTY_WALLET,
       getCachedLiveMarketPairs(),
       user
-        ? supabase
-            .from("trades")
-            .select("id", { count: "exact", head: true })
-            .eq("user_id", user.id)
+        ? Promise.resolve(
+            supabase
+              .from("trades")
+              .select("id", { count: "exact", head: true })
+              .eq("user_id", user.id)
+          )
             .then(({ count }) => count ?? 0)
-        : Promise.resolve(0),
+            .catch(() => 0)
+        : 0,
       user
-        ? supabase
-            .from("signal_packages")
-            .select("package_id, package_name, status, expires_at")
-            .eq("user_id", user.id)
-        : Promise.resolve({ data: [] as SignalPackageRow[] }),
+        ? Promise.resolve(
+            supabase
+              .from("signal_packages")
+              .select("package_id, package_name, status, expires_at")
+              .eq("user_id", user.id)
+          ).catch(() => ({ data: [] as SignalPackageRow[] }))
+        : { data: [] as SignalPackageRow[] },
     ]);
 
   const portfolio = {

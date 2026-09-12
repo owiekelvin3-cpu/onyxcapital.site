@@ -1,6 +1,5 @@
 "use client";
 
-import Image from "next/image";
 import { cn } from "@/lib/utils";
 import {
   gradientForSeed,
@@ -16,11 +15,11 @@ export function TraderAvatar({
   className,
 }: {
   trader: CopyTraderProfile;
-  size?: "sm" | "md" | "lg";
+  size?: "sm" | "md" | "lg" | "xl";
   className?: string;
 }) {
-  const dims = size === "lg" ? 56 : size === "sm" ? 36 : 48;
-  const ring = size === "lg" ? 3 : 2;
+  const dims = size === "xl" ? 64 : size === "lg" ? 56 : size === "sm" ? 36 : 48;
+  const ring = size === "xl" || size === "lg" ? 3 : 2;
   const [from, to] = gradientForSeed(trader.avatarSeed);
 
   if (trader.avatarKind === "gradient" && !isRemoteAvatarUrl(trader.avatarSeed)) {
@@ -38,7 +37,7 @@ export function TraderAvatar({
             width: dims,
             height: dims,
             background: `linear-gradient(145deg, ${from}, ${to})`,
-            fontSize: size === "lg" ? 18 : size === "sm" ? 12 : 15,
+            fontSize: size === "xl" ? 20 : size === "lg" ? 18 : size === "sm" ? 12 : 15,
           }}
         >
           {traderInitials(trader.name)}
@@ -59,13 +58,14 @@ export function TraderAvatar({
         className="relative overflow-hidden rounded-full bg-bg-secondary"
         style={{ width: dims, height: dims }}
       >
-        <Image
+        {/* Plain img: Next/Image throws on unknown hosts and remote SVGs (Dicebear). */}
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
           src={traderAvatarUrl(trader)}
           alt={`${trader.name} profile`}
           width={dims}
           height={dims}
           className="h-full w-full object-cover"
-          unoptimized
         />
       </div>
       {trader.avatarKind === "anime" && (

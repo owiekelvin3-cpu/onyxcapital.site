@@ -669,6 +669,30 @@
     "activeSubs": "الاشتراكات النشطة",
     "minAllocation": "الحد الأدنى للتخصيص هو {{amount}}",
     "insufficientBalance": "الرصيد غير كاف لهذا التخصيص.",
+    "monthlyReturn": "العائد الشهري",
+    "winRate": "معدل الربح",
+    "followers": "المتابعون",
+    "trades": "الصفقات",
+    "riskShort": "المخاطر",
+    "riskLevel": {
+      "low": "منخفض",
+      "medium": "متوسط",
+      "high": "مرتفع"
+    },
+    "copyPrice": "سعر النسخ",
+    "insufficientToCopy": "الرصيد غير كافٍ لنسخ هذا المتداول.",
+    "insufficientCta": "رصيد غير كافٍ",
+    "viewPerformance": "عرض الأداء",
+    "hidePerformance": "إخفاء الأداء",
+    "copy": "نسخ",
+    "uncopy": "إيقاف النسخ",
+    "markets": {
+      "crypto": "عملات رقمية",
+      "forex": "فوركس",
+      "indices": "مؤشرات",
+      "commodities": "سلع",
+      "scalping": "سكالبينج"
+    },
     "risk": {
       "low": "مخاطر منخفضة",
       "medium": "مخاطر متوسطة",

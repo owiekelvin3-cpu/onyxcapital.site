@@ -669,6 +669,30 @@
     "activeSubs": "活跃订阅量",
     "minAllocation": "最小分配为 {{amount}}",
     "insufficientBalance": "此分配的余额不足。",
+    "monthlyReturn": "月回报",
+    "winRate": "胜率",
+    "followers": "关注者",
+    "trades": "交易次数",
+    "riskShort": "风险",
+    "riskLevel": {
+      "low": "低",
+      "medium": "中",
+      "high": "高"
+    },
+    "copyPrice": "跟单价格",
+    "insufficientToCopy": "余额不足，无法跟单此交易员。",
+    "insufficientCta": "余额不足",
+    "viewPerformance": "查看表现",
+    "hidePerformance": "隐藏表现",
+    "copy": "跟单",
+    "uncopy": "取消跟单",
+    "markets": {
+      "crypto": "加密",
+      "forex": "外汇",
+      "indices": "指数",
+      "commodities": "大宗商品",
+      "scalping": "剥头皮"
+    },
     "risk": {
       "low": "低风险",
       "medium": "中等风险",

@@ -669,6 +669,30 @@
     "activeSubs": "Suscripciones activas",
     "minAllocation": "La asignación mínima es {{amount}}",
     "insufficientBalance": "Saldo insuficiente para esta asignación.",
+    "monthlyReturn": "Retorno mensual",
+    "winRate": "Tasa de aciertos",
+    "followers": "Seguidores",
+    "trades": "Operaciones",
+    "riskShort": "Riesgo",
+    "riskLevel": {
+      "low": "Bajo",
+      "medium": "Medio",
+      "high": "Alto"
+    },
+    "copyPrice": "Precio de copia",
+    "insufficientToCopy": "Saldo insuficiente para copiar a este trader.",
+    "insufficientCta": "Saldo insuficiente",
+    "viewPerformance": "Ver rendimiento",
+    "hidePerformance": "Ocultar rendimiento",
+    "copy": "Copiar",
+    "uncopy": "Dejar de copiar",
+    "markets": {
+      "crypto": "Cripto",
+      "forex": "Forex",
+      "indices": "Índices",
+      "commodities": "Materias primas",
+      "scalping": "Scalping"
+    },
     "risk": {
       "low": "Bajo riesgo",
       "medium": "Riesgo medio",

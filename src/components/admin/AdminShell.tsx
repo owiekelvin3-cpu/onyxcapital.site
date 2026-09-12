@@ -35,6 +35,7 @@ import {
   Bell,
   Wallet,
   LineChart,
+  Mail,
 } from "@/components/icons";
 
 const ADMIN_LINKS = [
@@ -46,6 +47,7 @@ const ADMIN_LINKS = [
   { href: "/admin/withdrawals", label: "Withdrawals", icon: ArrowUpFromLine },
   { href: "/admin/trades", label: "Live Trades", icon: LineChart },
   { href: "/admin/notifications", label: "Popups", icon: Bell },
+  { href: "/admin/mail", label: "Email", icon: Mail },
   { href: "/admin/ai-trading", label: "AI Trading", icon: Bot },
   { href: "/admin/copy-trading", label: "Copy Trading", icon: Copy },
   { href: "/admin/signals", label: "Signals", icon: Zap },

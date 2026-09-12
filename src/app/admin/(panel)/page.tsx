@@ -16,6 +16,7 @@ import {
   Comments,
   LineChart,
   Bell,
+  Mail,
 } from "@/components/icons";
 
 const QUICK_LINKS = [
@@ -25,6 +26,7 @@ const QUICK_LINKS = [
   { href: "/admin/withdrawals", label: "Withdrawals", icon: ArrowUpFromLine, statKey: "pendingWithdrawals" as const, hint: null },
   { href: "/admin/trades", label: "Live Trades", icon: LineChart, statKey: "recentTrades" as const, hint: null },
   { href: "/admin/notifications", label: "User popups", icon: Bell, statKey: null, hint: "Send on-screen alerts" },
+  { href: "/admin/mail", label: "Email users", icon: Mail, statKey: null, hint: "Send branded Resend emails" },
   { href: "/admin/support", label: "Support", icon: Comments, statKey: null, hint: "Live customer messages" },
   { href: "/admin/users", label: "Users", icon: Users, statKey: "totalUsers" as const, hint: null },
 ] as const;

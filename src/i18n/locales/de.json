@@ -669,6 +669,30 @@
     "activeSubs": "Aktive Abonnements",
     "minAllocation": "Die Mindestzuteilung beträgt {{amount}}",
     "insufficientBalance": "Unzureichendes Guthaben für diese Zuweisung.",
+    "monthlyReturn": "Monatliche Rendite",
+    "winRate": "Trefferquote",
+    "followers": "Follower",
+    "trades": "Trades",
+    "riskShort": "Risiko",
+    "riskLevel": {
+      "low": "Niedrig",
+      "medium": "Mittel",
+      "high": "Hoch"
+    },
+    "copyPrice": "Copy-Preis",
+    "insufficientToCopy": "Unzureichendes Guthaben, um diesen Trader zu kopieren.",
+    "insufficientCta": "Unzureichendes Guthaben",
+    "viewPerformance": "Performance ansehen",
+    "hidePerformance": "Performance ausblenden",
+    "copy": "Kopieren",
+    "uncopy": "Kopieren beenden",
+    "markets": {
+      "crypto": "Krypto",
+      "forex": "Forex",
+      "indices": "Indizes",
+      "commodities": "Rohstoffe",
+      "scalping": "Scalping"
+    },
     "risk": {
       "low": "Geringes Risiko",
       "medium": "Mittleres Risiko",

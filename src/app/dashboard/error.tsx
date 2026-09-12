@@ -4,6 +4,7 @@ import Link from "next/link";
 import { Button } from "@/components/ui/Button";
 
 export default function DashboardError({
+  error,
   reset,
 }: {
   error: Error & { digest?: string };
@@ -16,6 +17,11 @@ export default function DashboardError({
       <p className="text-sm text-text-tertiary mt-2 max-w-sm">
         Your session may have expired or the server returned an error.
       </p>
+      {error?.message ? (
+        <p className="mt-3 max-w-sm break-words font-mono text-[11px] leading-relaxed text-text-tertiary">
+          {error.message}
+        </p>
+      ) : null}
       <div className="flex gap-3 mt-6">
         <Button size="sm" onClick={reset}>
           Retry

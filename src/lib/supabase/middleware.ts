@@ -1,6 +1,6 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
-import { ADMIN_AUTH_COOKIE, isAdminPanelPath } from "@/lib/auth-guards";
+import { ADMIN_AUTH_COOKIE, isAdminPanelPath, isDashboardWithdrawPath } from "@/lib/auth-guards";
 
 async function fetchRole(
   supabase: ReturnType<typeof createServerClient>,
@@ -116,6 +116,21 @@ export async function updateSession(request: NextRequest) {
     url.search = "";
     if (user.email) url.searchParams.set("email", user.email);
     return NextResponse.redirect(url);
+  }
+
+  if (user && emailVerified && isDashboardWithdrawPath(pathname)) {
+    const { data } = await supabase
+      .from("profiles")
+      .select("role, is_suspended")
+      .eq("id", user.id)
+      .maybeSingle();
+
+    if (data?.is_suspended && data.role !== "admin") {
+      const url = request.nextUrl.clone();
+      url.pathname = "/dashboard";
+      url.search = "";
+      return NextResponse.redirect(url);
+    }
   }
 
   return supabaseResponse;

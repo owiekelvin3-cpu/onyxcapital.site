@@ -22,10 +22,12 @@ import { Input } from "@/components/ui/Input";
 import { AlertTriangle, ArrowLeft, Check, Copy, Image as ImageIcon, Loader2 } from "@/components/icons";
 import { ImageUploadField } from "@/components/dashboard/deposit/ImageUploadField";
 import { parseDepositNotes, depositNotesHaveImages } from "@/lib/deposit-details";
+import { useSuspendedAccount } from "@/hooks/useSuspendedAccount";
 
 export default function CryptoDepositPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { suspended } = useSuspendedAccount();
   const feeIdParam = searchParams.get("feeId");
   const amountParam = searchParams.get("amount");
   const assetParam = searchParams.get("asset");
@@ -179,12 +181,14 @@ export default function CryptoDepositPage() {
               Deposit at least {formatCurrency(pendingFeesTotal)} to clear your fee. This cannot be paid from
               your existing balance — the fee is deducted only after this deposit is approved.
             </p>
-            <Link
-              href="/dashboard/withdraw"
-              className="inline-block mt-2 text-xs font-medium text-brand hover:text-brand-hover"
-            >
-              View fee details on Withdraw
-            </Link>
+            {!suspended && (
+              <Link
+                href="/dashboard/withdraw"
+                className="inline-block mt-2 text-xs font-medium text-brand hover:text-brand-hover"
+              >
+                View fee details on Withdraw
+              </Link>
+            )}
           </div>
         </div>
       )}

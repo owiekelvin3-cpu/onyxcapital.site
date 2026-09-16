@@ -48,16 +48,14 @@ const MORE_MENU_ITEMS = [
   { href: "/dashboard/settings", labelKey: "dashboard.settings", icon: Settings },
 ] as const;
 
-const MORE_MENU_PATHS = MORE_MENU_ITEMS.map((item) => item.href);
-
 function isActive(pathname: string, href: string) {
   if (href === "/dashboard") return pathname === "/dashboard";
   return pathname === href || pathname.startsWith(`${href}/`);
 }
 
-function isMoreMenuActive(pathname: string) {
-  return MORE_MENU_PATHS.some(
-    (href) => pathname === href || pathname.startsWith(`${href}/`)
+function isMoreMenuActive(pathname: string, skipHrefs: readonly string[] = []) {
+  return MORE_MENU_ITEMS.filter((item) => !skipHrefs.includes(item.href)).some(
+    (item) => pathname === item.href || pathname.startsWith(`${item.href}/`)
   );
 }
 
@@ -66,6 +64,7 @@ type DeckoMobileDockProps = {
   onMenuOpen: () => void;
   onMenuClose: () => void;
   onLogout: () => void;
+  isSuspended?: boolean;
 };
 
 export function DeckoMobileDock({
@@ -73,9 +72,16 @@ export function DeckoMobileDock({
   onMenuOpen,
   onMenuClose,
   onLogout,
+  isSuspended = false,
 }: DeckoMobileDockProps) {
   const pathname = usePathname();
   const { t } = useTranslation();
+  const tabs = MOBILE_TABS.map((item) =>
+    isSuspended && item.href === "/dashboard/withdraw"
+      ? { labelKey: "dashboard.navDeposit" as const, href: "/dashboard/deposit", icon: ArrowDownToLine }
+      : item
+  );
+  const moreSkipHrefs = isSuspended ? (["/dashboard/deposit"] as const) : [];
 
   return (
     <>
@@ -85,11 +91,11 @@ export function DeckoMobileDock({
           aria-label={t("dashboard.navLabel")}
         >
           <div className="grid grid-cols-4 items-center gap-0.5">
-            {MOBILE_TABS.map((item) => {
+            {tabs.map((item) => {
               const Icon = item.icon;
               const isMore = item.href === null;
               const active = isMore
-                ? menuOpen || isMoreMenuActive(pathname)
+                ? menuOpen || isMoreMenuActive(pathname, moreSkipHrefs)
                 : isActive(pathname, item.href!);
               const featured = "featured" in item && item.featured;
 

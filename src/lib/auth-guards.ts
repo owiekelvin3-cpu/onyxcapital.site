@@ -3,6 +3,10 @@ export function isAdminPanelPath(path: string): boolean {
   return path === "/admin" || (path.startsWith("/admin/") && path !== "/admin/login");
 }
 
+export function isDashboardWithdrawPath(path: string): boolean {
+  return path === "/dashboard/withdraw" || path.startsWith("/dashboard/withdraw/");
+}
+
 export const ADMIN_AUTH_COOKIE = "onyx_admin_auth";
 
 function setAdminAuthCookieClient() {

@@ -59,11 +59,14 @@ function navActive(pathname: string, href: string, exact?: boolean) {
   return pathname === href || pathname.startsWith(`${href}/`);
 }
 
-export function DeckoSidebar() {
+export function DeckoSidebar({ isSuspended = false }: { isSuspended?: boolean }) {
   const pathname = usePathname();
   const router = useRouter();
   const { t } = useTranslation();
   const { openSearch } = useDashboardSearch();
+  const mainMenu = isSuspended
+    ? MAIN_MENU.filter((item) => item.href !== "/dashboard/withdraw")
+    : MAIN_MENU;
 
   async function logout() {
     const supabase = createClient();
@@ -104,7 +107,7 @@ export function DeckoSidebar() {
         Main Menu
       </p>
       <nav className="space-y-1">
-        {MAIN_MENU.map((item) => {
+        {mainMenu.map((item) => {
           const Icon = item.icon;
           const active = navActive(pathname, item.href, "exact" in item ? item.exact : false);
           return (

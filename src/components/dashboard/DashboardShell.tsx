@@ -3,7 +3,7 @@
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
-import { clearAdminSession } from "@/lib/auth-guards";
+import { clearAdminSession, isDashboardWithdrawPath } from "@/lib/auth-guards";
 import { cn } from "@/lib/utils";
 import { useBodyScrollLock } from "@/hooks/useBodyScrollLock";
 import { NotificationProvider } from "@/components/notifications/NotificationProvider";
@@ -52,6 +52,11 @@ export function DashboardShell({
   }, [isSuspended, suspensionReason]);
 
   useEffect(() => {
+    if (!suspended || !isDashboardWithdrawPath(pathname)) return;
+    router.replace("/dashboard");
+  }, [suspended, pathname, router]);
+
+  useEffect(() => {
     if (!userId) return;
 
     const supabase = createClient();
@@ -92,10 +97,10 @@ export function DashboardShell({
   return (
     <NotificationProvider userId={userId}>
       <CopyTradingProfitProvider userId={userId}>
-      <DashboardSearchProvider>
+      <DashboardSearchProvider hideWithdraw={suspended}>
       <UserLocationSync userId={userId} />
       <div className="decko-shell flex min-h-dvh w-full min-w-0 overflow-x-clip">
-        <DeckoSidebar />
+        <DeckoSidebar isSuspended={suspended} />
 
         <div className="flex min-w-0 flex-1 flex-col overflow-x-clip">
           <DeckoMobileTopBar
@@ -114,7 +119,7 @@ export function DashboardShell({
             )}
           >
             {suspended && <AccountSuspendedBanner reason={activeSuspensionReason} />}
-            {children}
+            {suspended && isDashboardWithdrawPath(pathname) ? null : children}
           </main>
 
           {!hideBottomNav && (
@@ -123,6 +128,7 @@ export function DashboardShell({
               onMenuOpen={() => setMenuOpen(true)}
               onMenuClose={() => setMenuOpen(false)}
               onLogout={() => void handleLogout()}
+              isSuspended={suspended}
             />
           )}
         </div>

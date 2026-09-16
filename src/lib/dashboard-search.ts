@@ -178,17 +178,22 @@ function itemGroup(item: DashboardSearchItem, t: (key: string) => string) {
 export function filterDashboardSearchItems(
   query: string,
   t: (key: string) => string,
-  limit = 12
+  limit = 12,
+  options?: { excludeHrefs?: string[] }
 ): DashboardSearchItem[] {
+  const excluded = new Set(options?.excludeHrefs ?? []);
+  const catalog = excluded.size
+    ? DASHBOARD_SEARCH_ITEMS.filter((item) => !excluded.has(item.href))
+    : DASHBOARD_SEARCH_ITEMS;
   const q = query.trim().toLowerCase();
 
   if (!q) {
-    return DASHBOARD_SEARCH_ITEMS.slice(0, limit);
+    return catalog.slice(0, limit);
   }
 
   const terms = q.split(/\s+/).filter(Boolean);
 
-  return DASHBOARD_SEARCH_ITEMS.filter((item) => {
+  return catalog.filter((item) => {
     const haystack = [
       itemLabel(item, t),
       itemGroup(item, t),

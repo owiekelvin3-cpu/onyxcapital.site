@@ -10,6 +10,7 @@ import {
   TrendingUp,
   Wallet,
 } from "@/components/icons";
+import { useSuspendedAccount } from "@/hooks/useSuspendedAccount";
 
 export function DashboardBalanceStrip({
   displayName,
@@ -21,6 +22,7 @@ export function DashboardBalanceStrip({
   pnl24h: number | null;
 }) {
   const { t } = useTranslation();
+  const { suspended } = useSuspendedAccount();
   const pnlTone = pnl24h === null ? null : pnl24h >= 0 ? "up" : "down";
 
   const metrics = [
@@ -97,12 +99,14 @@ export function DashboardBalanceStrip({
             >
               {t("dashboard.navDeposit")}
             </Link>
-            <Link
-              href="/dashboard/withdraw"
-              className="inline-flex h-11 items-center justify-center rounded-xl border border-border/80 bg-bg-secondary/80 px-6 text-sm font-medium text-text-primary backdrop-blur-sm transition-colors hover:border-brand/30 hover:bg-bg-hover"
-            >
-              {t("dashboard.navWithdraw")}
-            </Link>
+            {!suspended && (
+              <Link
+                href="/dashboard/withdraw"
+                className="inline-flex h-11 items-center justify-center rounded-xl border border-border/80 bg-bg-secondary/80 px-6 text-sm font-medium text-text-primary backdrop-blur-sm transition-colors hover:border-brand/30 hover:bg-bg-hover"
+              >
+                {t("dashboard.navWithdraw")}
+              </Link>
+            )}
             <Link
               href="/dashboard/copy-trading"
               className="inline-flex h-11 items-center justify-center rounded-xl border border-border/80 bg-bg-secondary/80 px-6 text-sm font-medium text-text-primary backdrop-blur-sm transition-colors hover:border-brand/30 hover:bg-bg-hover"

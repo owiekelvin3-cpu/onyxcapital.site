@@ -46,9 +46,11 @@ function resultGroup(item: DashboardSearchItem, t: (key: string) => string) {
 function DashboardCommandPalette({
   open,
   onClose,
+  hideWithdraw,
 }: {
   open: boolean;
   onClose: () => void;
+  hideWithdraw?: boolean;
 }) {
   const router = useRouter();
   const { t } = useTranslation();
@@ -59,7 +61,13 @@ function DashboardCommandPalette({
 
   useBodyScrollLock(open);
 
-  const results = useMemo(() => filterDashboardSearchItems(query, t), [query, t]);
+  const results = useMemo(
+    () =>
+      filterDashboardSearchItems(query, t, 12, {
+        excludeHrefs: hideWithdraw ? ["/dashboard/withdraw"] : undefined,
+      }),
+    [query, t, hideWithdraw]
+  );
 
   const navigate = useCallback(
     (item: DashboardSearchItem) => {
@@ -203,7 +211,13 @@ function DashboardCommandPalette({
   );
 }
 
-export function DashboardSearchProvider({ children }: { children: ReactNode }) {
+export function DashboardSearchProvider({
+  children,
+  hideWithdraw,
+}: {
+  children: ReactNode;
+  hideWithdraw?: boolean;
+}) {
   const [open, setOpen] = useState(false);
 
   const openSearch = useCallback(() => setOpen(true), []);
@@ -229,7 +243,7 @@ export function DashboardSearchProvider({ children }: { children: ReactNode }) {
   return (
     <DashboardSearchContext.Provider value={value}>
       {children}
-      <DashboardCommandPalette open={open} onClose={closeSearch} />
+      <DashboardCommandPalette open={open} onClose={closeSearch} hideWithdraw={hideWithdraw} />
     </DashboardSearchContext.Provider>
   );
 }

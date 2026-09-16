@@ -76,6 +76,15 @@
     "getStartedFree": "Get started for free",
     "mobileMenu": "Menu"
   },
+  "accountRestricted": {
+    "badge": "Account restricted",
+    "title": "Trading is paused on this account",
+    "body": "You can still open your dashboard. Placing trades and copy trading are unavailable until the team restores access.",
+    "reasonLabel": "Note from the team",
+    "contact": "Contact team",
+    "signOut": "Sign out",
+    "openDashboard": "Open dashboard"
+  },
   "footer": {
     "trustedBy": "Trusted by institutions worldwide",
     "platform": "Platform",
@@ -451,11 +460,13 @@
     "navGroupOverview": "Overview",
     "navGroupTools": "Tools",
     "suspended": {
-      "title": "Account suspended",
-      "description": "You can still sign in and view your account, but withdrawals are disabled. Contact our team to resolve this.",
+      "title": "Account restricted",
+      "description": "You can still view your dashboard. Placing trades and copy trading are paused until the team restores access.",
       "reason": "Reason",
-      "contactAdmin": "Contact admin",
-      "withdrawBlocked": "Withdrawals are disabled while your account is suspended. Please contact admin through support."
+      "contactTeam": "Contact team",
+      "withdrawBlocked": "Withdrawals are paused on this account. Contact the team through support.",
+      "tradingBlocked": "Placing trades is paused on this account. Contact the team if you need help.",
+      "copyBlocked": "Copy trading is paused on this account. Contact the team if you need help."
     },
     "navDashboard": "Dashboard",
     "navTrade": "Trade",
@@ -1911,7 +1922,7 @@
       "reviewKyc": "Open KYC review",
       "lastUpdated": "Profile last updated",
       "accountActions": "Account actions",
-      "accountActionsDesc": "Suspend access, reset verification, or save an internal note. A reason is required for every action except lifting a suspension. Admin roles cannot be changed from the website.",
+      "accountActionsDesc": "Suspension lets the user view their dashboard, but blocks trades and copy trading until you lift it. A reason is required for every action except lifting a suspension. Team roles cannot be changed from the website.",
       "reasonLabel": "Reason (required)",
       "reasonLabelOptional": "Reason (optional for lift)",
       "reasonPlaceholder": "Explain why you are taking this action…",
@@ -1930,7 +1941,7 @@
       "moderationHistory": "Moderation history",
       "noModerationHistory": "No moderation actions yet.",
       "actionSuccess": {
-        "suspend": "User suspended.",
+        "suspend": "User restricted. They can view the dashboard, but trades and copy trading stay paused.",
         "unsuspend": "Suspension lifted.",
         "reset_kyc": "KYC reset. User must verify again.",
         "make_admin": "User promoted to admin.",

@@ -25,6 +25,7 @@ import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { ArrowDownToLine, ChevronLeft, ChevronRight, Loader2, Wallet } from "@/components/icons";
 import { cn, formatCurrency } from "@/lib/utils";
+import { useSuspendedAccount } from "@/hooks/useSuspendedAccount";
 
 function scrollToPageTop() {
   window.scrollTo({ top: 0, behavior: "smooth" });
@@ -33,13 +34,14 @@ function scrollToPageTop() {
 function copyErrorMessage(err: unknown, t: (key: string) => string) {
   const message = err instanceof Error ? err.message : "";
   if (/insufficient(?: deposit)? balance/i.test(message)) return t("copyTrading.insufficientBalance");
-  if (/not available/i.test(message)) return t("copyTrading.unavailable");
+  if (/not available|restricted/i.test(message)) return t("dashboard.suspended.copyBlocked");
   return message || t("copyTrading.unavailable");
 }
 
 export default function CopyTradingPage() {
   const { t } = useTranslation();
   const router = useRouter();
+  const { suspended } = useSuspendedAccount();
   const [traders, setTraders] = useState<CopyTraderProfile[]>([]);
   const [subscriptions, setSubscriptions] = useState<CopySubscriptionRow[]>([]);
   const [userId, setUserId] = useState<string | null>(null);
@@ -107,6 +109,12 @@ export default function CopyTradingPage() {
   async function handleCopy(trader: CopyTraderProfile) {
     setError("");
 
+    if (suspended) {
+      setError(t("dashboard.suspended.copyBlocked"));
+      setConfirmTrader(null);
+      return;
+    }
+
     if (!userId) {
       router.push("/register");
       return;
@@ -147,6 +155,10 @@ export default function CopyTradingPage() {
   async function handleUncopy(traderName: string) {
     setError("");
     if (!userId) return;
+    if (suspended) {
+      setError(t("dashboard.suspended.copyBlocked"));
+      return;
+    }
 
     setLoadingTrader(traderName);
     try {
@@ -175,6 +187,12 @@ export default function CopyTradingPage() {
         <h1 className="text-2xl font-bold text-text-primary">{t("copyTrading.title")}</h1>
         <p className="mt-1 max-w-2xl text-sm text-text-secondary">{t("copyTrading.subtitle")}</p>
       </div>
+
+      {suspended && (
+        <p className="rounded-xl border border-red/25 bg-red/5 px-4 py-3 text-sm text-text-secondary">
+          {t("dashboard.suspended.copyBlocked")}
+        </p>
+      )}
 
       {userId && (
         <Card className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between sm:p-5">
@@ -316,7 +334,13 @@ export default function CopyTradingPage() {
                   userId={userId}
                   loading={loadingTrader === trader.name}
                   canAfford={balance >= trader.price}
-                  onCopy={() => setConfirmTrader(trader)}
+                  onCopy={() => {
+                    if (suspended) {
+                      setError(t("dashboard.suspended.copyBlocked"));
+                      return;
+                    }
+                    setConfirmTrader(trader);
+                  }}
                   onUncopy={() => handleUncopy(trader.name)}
                 />
               ))}
@@ -383,7 +407,7 @@ export default function CopyTradingPage() {
         </>
       )}
 
-      {confirmTrader && (
+      {confirmTrader && !suspended && (
         <CopyTraderConfirmModal
           trader={confirmTrader}
           balance={balance}

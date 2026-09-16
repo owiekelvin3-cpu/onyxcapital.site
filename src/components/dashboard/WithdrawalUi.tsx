@@ -175,9 +175,9 @@ export function WithdrawalSuspendedBanner({ reason }: { reason?: string | null }
         <AlertTriangle className="w-4 h-4" />
       </span>
       <div>
-        <p className="text-sm font-semibold text-text-primary">Account suspended</p>
+        <p className="text-sm font-semibold text-text-primary">Account restricted</p>
         <p className="text-xs text-text-tertiary mt-1 leading-relaxed">
-          Withdrawals are disabled while your account is suspended. Contact admin through support to resolve this.
+          Withdrawals are paused on this account. Contact the team through support to resolve this.
         </p>
         {reason?.trim() && (
           <p className="text-xs text-text-tertiary mt-2">
@@ -189,7 +189,7 @@ export function WithdrawalSuspendedBanner({ reason }: { reason?: string | null }
           className="inline-flex items-center gap-1 mt-2 text-xs font-medium text-brand hover:text-brand-hover"
         >
           <Comments className="w-3.5 h-3.5" />
-          Contact admin
+          Contact team
         </Link>
       </div>
     </div>

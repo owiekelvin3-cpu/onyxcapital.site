@@ -103,7 +103,7 @@ export function MemeCoinGrid({ coins }: { coins: MemeCoinRow[] }) {
       <div className="rounded-2xl border border-dashed border-border bg-bg-secondary/50 px-6 py-16 text-center">
         <p className="text-base font-semibold text-text-primary">Today&apos;s picks are loading</p>
         <p className="mt-2 text-sm text-text-secondary">
-          The daily meme coin feed refreshes automatically. Check back soon or ask an admin to run sync.
+          The daily meme coin feed refreshes automatically. Check back soon or ask the team to run sync.
         </p>
       </div>
     );

@@ -28,7 +28,7 @@ export function AccountSuspendedBanner({ reason }: { reason?: string | null }) {
           className="mt-3 inline-flex items-center gap-1.5 text-xs font-semibold text-brand hover:text-brand-hover"
         >
           <Comments className="h-3.5 w-3.5" />
-          {t("dashboard.suspended.contactAdmin")}
+          {t("dashboard.suspended.contactTeam")}
         </Link>
       </div>
     </div>

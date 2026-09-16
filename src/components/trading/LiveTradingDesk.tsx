@@ -28,6 +28,7 @@ import {
 } from "@/lib/api/trading";
 import { MARKET_PAIRS, type MarketPair } from "@/lib/market-data";
 import { useLiveMarketPairs } from "@/hooks/useLiveMarketPairs";
+import { useSuspendedAccount } from "@/hooks/useSuspendedAccount";
 import { emitDashboardRefresh } from "@/lib/dashboard-live-sync";
 import type { HoldingRow, TradeRow } from "@/lib/supabase/types";
 import { cn, formatCurrency, formatNumber, formatPercent } from "@/lib/utils";
@@ -113,6 +114,7 @@ function Segmented<T extends string>({
 
 export function LiveTradingDesk() {
   const { t } = useTranslation();
+  const { suspended } = useSuspendedAccount();
   const pairs = useLiveMarketPairs(MARKET_PAIRS, 15_000);
   const [category, setCategory] = useState<Category>("crypto");
   const [symbol, setSymbol] = useState("BTC/USDT");
@@ -236,6 +238,11 @@ export function LiveTradingDesk() {
 
     setBusy(side);
     try {
+      if (suspended) {
+        setError(t("dashboard.suspended.tradingBlocked"));
+        setBusy(null);
+        return;
+      }
       const supabase = createClient();
       await executeTrade(supabase, {
         userId,
@@ -264,6 +271,7 @@ export function LiveTradingDesk() {
       const message = err instanceof Error ? err.message : t("trading.insufficientBalance");
       if (/insufficient(?: deposit)? balance/i.test(message)) setError(t("trading.insufficientBalance"));
       else if (/insufficient holdings/i.test(message)) setError(t("trading.insufficientHoldings"));
+      else if (/restricted/i.test(message)) setError(t("dashboard.suspended.tradingBlocked"));
       else setError(message);
     } finally {
       setBusy(null);
@@ -272,6 +280,10 @@ export function LiveTradingDesk() {
 
   async function closeHolding(holding: HoldingRow) {
     if (!userId) return;
+    if (suspended) {
+      setError(t("dashboard.suspended.tradingBlocked"));
+      return;
+    }
     const match = pairs.find((p) => baseAsset(p.symbol) === holding.asset);
     const live = match?.price ?? 0;
     if (live <= 0 || holding.quantity <= 0) return;
@@ -290,7 +302,8 @@ export function LiveTradingDesk() {
       await loadAccount();
       setTab("history");
     } catch (err) {
-      setError(err instanceof Error ? err.message : t("trading.insufficientHoldings"));
+      const message = err instanceof Error ? err.message : t("trading.insufficientHoldings");
+      setError(/restricted/i.test(message) ? t("dashboard.suspended.tradingBlocked") : message);
     } finally {
       setClosingAsset(null);
     }
@@ -421,6 +434,11 @@ export function LiveTradingDesk() {
               </p>
             </div>
           </div>
+          {suspended && (
+            <p className="mb-3 rounded-xl border border-red/25 bg-red/5 px-3 py-2 text-xs leading-relaxed text-text-secondary">
+              {t("dashboard.suspended.tradingBlocked")}
+            </p>
+          )}
 
           <div className="space-y-3">
             <Segmented
@@ -562,7 +580,7 @@ export function LiveTradingDesk() {
               <Button
                 type="button"
                 className="!bg-green !text-white"
-                disabled={busy !== null || !usd}
+                disabled={busy !== null || !usd || suspended}
                 onClick={() => void submit("buy")}
               >
                 {busy === "buy" ? (
@@ -577,7 +595,7 @@ export function LiveTradingDesk() {
               <Button
                 type="button"
                 className="!bg-red !text-white"
-                disabled={busy !== null || !usd}
+                disabled={busy !== null || !usd || suspended}
                 onClick={() => void submit("sell")}
               >
                 {busy === "sell" ? (

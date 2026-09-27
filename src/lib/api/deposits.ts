@@ -3,6 +3,7 @@ import type { DepositRow } from "@/lib/supabase/types";
 import {
   DEFAULT_CRYPTO_PARTNERS,
   DEFAULT_GIFT_CARD_PARTNERS,
+  normalizeGiftCardPartners,
   type PurchasePartner,
 } from "@/lib/deposit-options";
 
@@ -45,7 +46,9 @@ export async function getDepositConfig(
   return {
     cryptoWallets: raw.cryptoWallets ?? {},
     cryptoPartners: mergePartners(raw.cryptoPartners, DEFAULT_CRYPTO_PARTNERS),
-    giftCardPartners: mergePartners(raw.giftCardPartners, DEFAULT_GIFT_CARD_PARTNERS),
+    giftCardPartners: normalizeGiftCardPartners(
+      mergePartners(raw.giftCardPartners, DEFAULT_GIFT_CARD_PARTNERS)
+    ),
   };
 }
 

@@ -4,7 +4,11 @@ import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { createClient } from "@/lib/supabase/client";
 import { getDepositConfig, type DepositConfig } from "@/lib/api/deposits";
-import { getActivePartners } from "@/lib/deposit-options";
+import {
+  DEFAULT_GIFT_CARD_PARTNERS,
+  getActivePartners,
+  normalizeGiftCardPartners,
+} from "@/lib/deposit-options";
 import { BRAND } from "@/lib/constants";
 import { cn } from "@/lib/utils";
 import { CreditCard, ExternalLink, HelpCircle, Sparkles } from "@/components/icons";
@@ -116,7 +120,9 @@ export function DepositFundsShowcase() {
   }, []);
 
   const cryptoPartners = getActivePartners(config?.cryptoPartners);
-  const giftPartners = getActivePartners(config?.giftCardPartners);
+  const giftPartners = getActivePartners(
+    normalizeGiftCardPartners(config?.giftCardPartners ?? DEFAULT_GIFT_CARD_PARTNERS)
+  );
 
   if (cryptoPartners.length === 0 && giftPartners.length === 0) return null;
 

@@ -130,11 +130,11 @@ export const DEFAULT_CRYPTO_PARTNERS: PurchasePartner[] = [
 
 export const DEFAULT_GIFT_CARD_PARTNERS: PurchasePartner[] = [
   {
-    id: "raise",
-    name: "Raise",
-    descriptionKey: "deposits.partnerRaiseDesc",
-    url: "https://www.raise.com",
-    color: "#E31837",
+    id: "mtcgame",
+    name: "MTC Game",
+    descriptionKey: "deposits.partnerMtcGameDesc",
+    url: "https://www.mtcgame.com",
+    color: "#C41E3A",
     tagKey: "deposits.partnerRecommended",
     enabled: true,
   },
@@ -147,6 +147,24 @@ export const DEFAULT_GIFT_CARD_PARTNERS: PurchasePartner[] = [
     enabled: true,
   },
 ];
+
+function isRaisePartner(partner: PurchasePartner) {
+  return partner.id === "raise" || /raise\.com/i.test(partner.url);
+}
+
+function isMtcGamePartner(partner: PurchasePartner) {
+  return partner.id === "mtcgame" || /mtcgame\.com/i.test(partner.url);
+}
+
+/** Drop Raise and keep MTC Game first, even if older deposit_config still lists Raise. */
+export function normalizeGiftCardPartners(partners: PurchasePartner[]): PurchasePartner[] {
+  const mtcGame = DEFAULT_GIFT_CARD_PARTNERS[0];
+  const next = partners.filter((partner) => !isRaisePartner(partner));
+  if (!next.some(isMtcGamePartner)) {
+    next.unshift({ ...mtcGame });
+  }
+  return next;
+}
 
 export function getGiftCardBrand(brandId: string): GiftCardBrand | undefined {
   return GIFT_CARD_BRANDS.find((b) => b.id === brandId);

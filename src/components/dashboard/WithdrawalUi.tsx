@@ -177,7 +177,7 @@ export function WithdrawalSuspendedBanner({ reason }: { reason?: string | null }
       <div>
         <p className="text-sm font-semibold text-text-primary">Account restricted</p>
         <p className="text-xs text-text-tertiary mt-1 leading-relaxed">
-          Withdrawals are paused on this account. Contact the team through support to resolve this.
+          Withdrawals are paused on this account. Contact support to resolve this.
         </p>
         {reason?.trim() && (
           <p className="text-xs text-text-tertiary mt-2">
@@ -189,7 +189,7 @@ export function WithdrawalSuspendedBanner({ reason }: { reason?: string | null }
           className="inline-flex items-center gap-1 mt-2 text-xs font-medium text-brand hover:text-brand-hover"
         >
           <Comments className="w-3.5 h-3.5" />
-          Contact team
+          Contact support
         </Link>
       </div>
     </div>

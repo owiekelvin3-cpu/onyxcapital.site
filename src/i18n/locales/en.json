@@ -79,9 +79,9 @@
   "accountRestricted": {
     "badge": "Account restricted",
     "title": "Trading is paused on this account",
-    "body": "You can still open your dashboard. Placing trades and copy trading are unavailable until the team restores access.",
-    "reasonLabel": "Note from the team",
-    "contact": "Contact team",
+    "body": "You can still open your dashboard. Placing trades and copy trading are unavailable until support restores access.",
+    "reasonLabel": "Note from support",
+    "contact": "Contact support",
     "signOut": "Sign out",
     "openDashboard": "Open dashboard"
   },
@@ -461,12 +461,12 @@
     "navGroupTools": "Tools",
     "suspended": {
       "title": "Account restricted",
-      "description": "You can still view your dashboard. Placing trades and copy trading are paused until the team restores access.",
+      "description": "You can still view your dashboard. Placing trades and copy trading are paused until support restores access.",
       "reason": "Reason",
-      "contactTeam": "Contact team",
-      "withdrawBlocked": "Withdrawals are paused on this account. Contact the team through support.",
-      "tradingBlocked": "Placing trades is paused on this account. Contact the team if you need help.",
-      "copyBlocked": "Copy trading is paused on this account. Contact the team if you need help."
+      "contactTeam": "Contact support",
+      "withdrawBlocked": "Withdrawals are paused on this account. Contact support.",
+      "tradingBlocked": "Placing trades is paused on this account. Contact support if you need help.",
+      "copyBlocked": "Copy trading is paused on this account. Contact support if you need help."
     },
     "navDashboard": "Dashboard",
     "navTrade": "Trade",
@@ -685,6 +685,7 @@
     "partnerMoonPayDesc": "Buy Bitcoin, Ethereum, USDT and more with credit card, debit card, or bank transfer.",
     "partnerTransakDesc": "Global on-ramp supporting 170+ cryptocurrencies and local payment methods worldwide.",
     "partnerRaiseDesc": "Discounted digital gift cards for Apple, Amazon, Visa, Steam and hundreds of brands.",
+    "partnerMtcGameDesc": "Buy digital game cards and top-ups for Free Fire, Valorant, and more.",
     "partnerGyftDesc": "Instant digital gift cards delivered by email — Apple, Amazon, Google Play and more.",
     "cryptoPageDesc": "Select a coin, send funds to the wallet address, then upload a screenshot of your payment.",
     "proofOfPayment": "Proof of payment",

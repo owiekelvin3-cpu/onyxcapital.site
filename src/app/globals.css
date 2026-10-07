@@ -1452,10 +1452,14 @@ html.support-chat-open body {
   background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.04), transparent);
 }
 
-/* Hide Smartsupp's default bubble on first paint. Our draggable button opens the chat. */
+/* Hide Smartsupp's default launcher. Our dashboard button opens the chat. */
 html:not(.smartsupp-chat-open) iframe[src*="smartsupp"],
-html:not(.smartsupp-chat-open) #chat-application {
+html:not(.smartsupp-chat-open) iframe[title*="Smartsupp" i],
+html:not(.smartsupp-chat-open) #chat-application,
+html:not(.smartsupp-chat-open) #smartsupp-widget-container,
+html:not(.smartsupp-chat-open) [id^="smartsupp"]:not(script) {
   opacity: 0 !important;
   visibility: hidden !important;
   pointer-events: none !important;
+  transform: translate(120vw, 120vh) !important;
 }

@@ -120,7 +120,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         <style
           dangerouslySetInnerHTML={{
             __html:
-              'html:not(.smartsupp-chat-open) iframe[src*="smartsupp"],html:not(.smartsupp-chat-open) #chat-application{opacity:0!important;visibility:hidden!important;pointer-events:none!important}',
+              'html:not(.smartsupp-chat-open) iframe[src*="smartsupp"],html:not(.smartsupp-chat-open) iframe[title*="Smartsupp" i],html:not(.smartsupp-chat-open) #chat-application,html:not(.smartsupp-chat-open) #smartsupp-widget-container,html:not(.smartsupp-chat-open) [id^="smartsupp"]:not(script){opacity:0!important;visibility:hidden!important;pointer-events:none!important;transform:translate(120vw,120vh)!important}',
           }}
         />
       </head>

@@ -30,9 +30,13 @@ function defaultPos(): Pos {
 
 function clampPos(pos: Pos): Pos {
   const pad = 8;
+  const dockClearance = window.innerWidth < 1024 ? 96 : 24;
   return {
     x: Math.min(Math.max(pad, pos.x), Math.max(pad, window.innerWidth - SIZE - pad)),
-    y: Math.min(Math.max(pad, pos.y), Math.max(pad, window.innerHeight - SIZE - pad)),
+    y: Math.min(
+      Math.max(pad, pos.y),
+      Math.max(pad, window.innerHeight - SIZE - pad - dockClearance)
+    ),
   };
 }
 

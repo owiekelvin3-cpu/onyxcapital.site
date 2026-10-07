@@ -23,6 +23,7 @@ type ChatListener = (open: boolean) => void;
 
 const chatListeners = new Set<ChatListener>();
 let hooksInstalled = false;
+let watchInstalled = false;
 let chatOpen = false;
 
 export function getSmartsuppKey() {
@@ -60,8 +61,10 @@ function ensureLoader(key: string) {
   window._smartsupp.cookieDomain = ".onyxcapital.site";
   window._smartsupp.color = "#e2ff4c";
   window._smartsupp.hideBanner = true;
-  window._smartsupp.hideWidget = !chatOpen;
+  window._smartsupp.hideWidget = true;
   window._smartsupp.privacyNoticeUrl = "https://onyxcapital.site/privacy";
+
+  watchNativeLauncher();
 
   if (window.smartsupp) {
     installHooks();
@@ -85,12 +88,41 @@ function ensureLoader(key: string) {
   document.head.appendChild(script);
 }
 
+const NATIVE_LAUNCHER_SELECTOR = [
+  'iframe[src*="smartsupp"]',
+  'iframe[title*="Smartsupp" i]',
+  "#chat-application",
+  "#smartsupp-widget-container",
+].join(",");
+
+function hideNativeLauncher() {
+  if (typeof document === "undefined" || chatOpen) return;
+  document.querySelectorAll(NATIVE_LAUNCHER_SELECTOR).forEach((node) => {
+    if (!(node instanceof HTMLElement)) return;
+    node.style.setProperty("opacity", "0", "important");
+    node.style.setProperty("visibility", "hidden", "important");
+    node.style.setProperty("pointer-events", "none", "important");
+    node.style.setProperty("transform", "translate(120vw, 120vh)", "important");
+  });
+}
+
+function watchNativeLauncher() {
+  if (typeof document === "undefined" || watchInstalled) return;
+  watchInstalled = true;
+  hideNativeLauncher();
+  const observer = new MutationObserver(() => hideNativeLauncher());
+  observer.observe(document.documentElement, { childList: true, subtree: true });
+}
+
 function installHooks() {
   if (hooksInstalled || typeof window === "undefined" || !window.smartsupp) return;
   hooksInstalled = true;
   window.smartsupp("on", "messenger_close", () => {
+    window._smartsupp = window._smartsupp || {};
+    window._smartsupp.hideWidget = true;
     window.smartsupp?.("chat:hide");
     notifyChatOpen(false);
+    hideNativeLauncher();
   });
 }
 
@@ -100,6 +132,8 @@ export function openSmartsuppChat() {
   if (!key) return;
   ensureLoader(key);
   notifyChatOpen(true);
+  window._smartsupp = window._smartsupp || {};
+  window._smartsupp.hideWidget = false;
   window.smartsupp?.("chat:show");
   window.smartsupp?.("chat:open");
 }
@@ -115,7 +149,7 @@ export function syncSmartsuppWidget(opts: {
   ensureLoader(key);
 
   window._smartsupp = window._smartsupp || {};
-  window._smartsupp.hideWidget = opts.hidden;
+  window._smartsupp.hideWidget = opts.hidden || !chatOpen;
 
   if (opts.hidden) {
     window.smartsupp?.("chat:close");
@@ -125,9 +159,12 @@ export function syncSmartsuppWidget(opts: {
   }
 
   if (chatOpen) {
+    window._smartsupp.hideWidget = false;
     window.smartsupp?.("chat:show");
   } else {
+    window._smartsupp.hideWidget = true;
     window.smartsupp?.("chat:hide");
+    hideNativeLauncher();
   }
 
   if (opts.name) window.smartsupp?.("name", opts.name);

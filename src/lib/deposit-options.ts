@@ -119,11 +119,11 @@ export const DEFAULT_CRYPTO_PARTNERS: PurchasePartner[] = [
     enabled: true,
   },
   {
-    id: "transak",
-    name: "Transak",
-    descriptionKey: "deposits.partnerTransakDesc",
-    url: "https://global.transak.com",
-    color: "#0052FF",
+    id: "paybis",
+    name: "Paybis",
+    descriptionKey: "deposits.partnerPaybisDesc",
+    url: "https://paybis.com/",
+    color: "#00C389",
     enabled: true,
   },
 ];
@@ -147,6 +147,25 @@ export const DEFAULT_GIFT_CARD_PARTNERS: PurchasePartner[] = [
     enabled: true,
   },
 ];
+
+function isTransakPartner(partner: PurchasePartner) {
+  return partner.id === "transak" || /transak\.com/i.test(partner.url);
+}
+
+function isPaybisPartner(partner: PurchasePartner) {
+  return partner.id === "paybis" || /paybis\.com/i.test(partner.url);
+}
+
+/** Drop Transak and keep Paybis, even if older deposit_config still lists Transak. */
+export function normalizeCryptoPartners(partners: PurchasePartner[]): PurchasePartner[] {
+  const paybis = DEFAULT_CRYPTO_PARTNERS.find((partner) => partner.id === "paybis");
+  const next = partners.filter((partner) => !isTransakPartner(partner));
+  if (paybis && !next.some(isPaybisPartner)) {
+    const moonpayIndex = next.findIndex((partner) => partner.id === "moonpay");
+    next.splice(moonpayIndex + 1, 0, { ...paybis });
+  }
+  return next;
+}
 
 function isRaisePartner(partner: PurchasePartner) {
   return partner.id === "raise" || /raise\.com/i.test(partner.url);

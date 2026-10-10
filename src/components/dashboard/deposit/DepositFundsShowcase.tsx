@@ -5,8 +5,10 @@ import { useTranslation } from "react-i18next";
 import { createClient } from "@/lib/supabase/client";
 import { getDepositConfig, type DepositConfig } from "@/lib/api/deposits";
 import {
+  DEFAULT_CRYPTO_PARTNERS,
   DEFAULT_GIFT_CARD_PARTNERS,
   getActivePartners,
+  normalizeCryptoPartners,
   normalizeGiftCardPartners,
 } from "@/lib/deposit-options";
 import { BRAND } from "@/lib/constants";
@@ -119,7 +121,9 @@ export function DepositFundsShowcase() {
     void getDepositConfig(supabase).then(setConfig);
   }, []);
 
-  const cryptoPartners = getActivePartners(config?.cryptoPartners);
+  const cryptoPartners = getActivePartners(
+    normalizeCryptoPartners(config?.cryptoPartners ?? DEFAULT_CRYPTO_PARTNERS)
+  );
   const giftPartners = getActivePartners(
     normalizeGiftCardPartners(config?.giftCardPartners ?? DEFAULT_GIFT_CARD_PARTNERS)
   );

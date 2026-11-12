@@ -1,5 +1,6 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
+import { ADMIN_RETURN_COOKIE } from "@/lib/admin-view-as-cookie";
 import { ADMIN_AUTH_COOKIE, isAdminPanelPath, isDashboardWithdrawPath } from "@/lib/auth-guards";
 
 async function fetchRole(
@@ -72,7 +73,9 @@ export async function updateSession(request: NextRequest) {
     return NextResponse.redirect(url);
   }
 
-  if (user && !emailVerified && (pathname.startsWith("/dashboard") || isAdminPanel)) {
+  const viewingAsUser = Boolean(request.cookies.get(ADMIN_RETURN_COOKIE)?.value);
+
+  if (user && !emailVerified && !viewingAsUser && (pathname.startsWith("/dashboard") || isAdminPanel)) {
     const url = request.nextUrl.clone();
     url.pathname = "/verify-email";
     url.search = "";

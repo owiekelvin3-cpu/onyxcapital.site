@@ -95,6 +95,7 @@ export default function AdminUsersPage() {
   const [loading, setLoading] = useState(true);
   const [detailLoading, setDetailLoading] = useState(false);
   const [acting, setActing] = useState(false);
+  const [openingDashboard, setOpeningDashboard] = useState(false);
   const [message, setMessage] = useState("");
   const [messageTone, setMessageTone] = useState<"success" | "error">("success");
   const [balanceAmount, setBalanceAmount] = useState("");
@@ -177,6 +178,29 @@ export default function AdminUsersPage() {
       setDetails(null);
     }
     setDetailLoading(false);
+  }
+
+  async function openUserDashboard(userId: string) {
+    setOpeningDashboard(true);
+    setMessage("");
+    try {
+      const res = await fetch("/api/admin/view-as", {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId }),
+      });
+      const body = (await res.json().catch(() => ({}))) as { error?: string };
+      if (!res.ok) {
+        showFeedback(body.error ?? "Could not open this dashboard", "error");
+        setOpeningDashboard(false);
+        return;
+      }
+      window.location.href = "/dashboard";
+    } catch {
+      showFeedback("Could not open this dashboard", "error");
+      setOpeningDashboard(false);
+    }
   }
 
   async function handleModerate(action: "suspend" | "unsuspend" | "reset_kyc") {
@@ -530,6 +554,18 @@ export default function AdminUsersPage() {
                 <p className="text-xs text-text-tertiary mt-1">Joined {formatDate(details.profile.created_at)}</p>
               </div>
               )}
+
+              <Button
+                type="button"
+                size="sm"
+                disabled={openingDashboard}
+                onClick={() => void openUserDashboard(details.profile.id)}
+              >
+                {openingDashboard ? "Opening dashboard…" : "Open dashboard"}
+              </Button>
+              <p className="text-xs text-text-tertiary">
+                Opens this user’s dashboard with their balance, trades, deposits, and settings. Use Back to admin to return.
+              </p>
 
               <div className="rounded-lg border border-border bg-bg-secondary/40 p-4">
                 <div className="mb-3 flex items-center justify-between gap-2">

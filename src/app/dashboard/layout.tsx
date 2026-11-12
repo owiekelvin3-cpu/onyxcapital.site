@@ -1,6 +1,8 @@
+import { cookies } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import type { Metadata } from "next";
+import { ADMIN_RETURN_COOKIE } from "@/lib/admin-view-as-cookie";
 import { BackendPending } from "@/components/brand/BackendPending";
 import { DashboardShell } from "@/components/dashboard/DashboardShell";
 import { hasSupabaseEnv } from "@/lib/env";
@@ -21,6 +23,9 @@ export default async function DashboardLayout({
     );
   }
 
+  const cookieStore = await cookies();
+  const viewingAs = Boolean(cookieStore.get(ADMIN_RETURN_COOKIE)?.value);
+
   const supabase = await createClient();
   const {
     data: { user },
@@ -30,7 +35,7 @@ export default async function DashboardLayout({
     redirect("/login?redirect=/dashboard");
   }
 
-  if (!user.email_confirmed_at) {
+  if (!user.email_confirmed_at && !viewingAs) {
     const email = user.email ? `?email=${encodeURIComponent(user.email)}` : "";
     redirect(`/verify-email${email}`);
   }
@@ -49,6 +54,7 @@ export default async function DashboardLayout({
       avatarUrl={profile?.avatar_url ?? undefined}
       isSuspended={profile?.is_suspended ?? false}
       suspensionReason={profile?.suspension_reason}
+      viewingAs={viewingAs}
     >
       {children}
     </DashboardShell>

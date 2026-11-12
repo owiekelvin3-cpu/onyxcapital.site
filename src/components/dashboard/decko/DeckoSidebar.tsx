@@ -30,6 +30,7 @@ import {
 } from "@/components/icons";
 import { createClient } from "@/lib/supabase/client";
 import { clearAdminSession } from "@/lib/auth-guards";
+import { isViewingAsUser, returnToAdmin } from "@/lib/admin-view-as-client";
 import { useDashboardSearch } from "@/components/dashboard/DashboardSearchProvider";
 
 const MAIN_MENU = [
@@ -69,6 +70,13 @@ export function DeckoSidebar({ isSuspended = false }: { isSuspended?: boolean })
     : MAIN_MENU;
 
   async function logout() {
+    if (isViewingAsUser()) {
+      const returned = await returnToAdmin();
+      if (returned) return;
+      const supabase = createClient();
+      await supabase.auth.signOut({ scope: "local" });
+      return;
+    }
     const supabase = createClient();
     await clearAdminSession();
     await supabase.auth.signOut();

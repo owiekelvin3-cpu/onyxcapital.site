@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useTranslation } from "react-i18next";
 import { createClient } from "@/lib/supabase/client";
+import { isViewingAsUser, returnToAdmin } from "@/lib/admin-view-as-client";
 import { Button } from "@/components/ui/Button";
 import { Bell, Comments, LogOut, Receipt, User } from "@/components/icons";
 import { AccountLinkCard, SettingsSection } from "./shared";
@@ -18,6 +19,13 @@ export function SettingsAccountSection({
   const router = useRouter();
 
   async function handleSignOut() {
+    if (isViewingAsUser()) {
+      const returned = await returnToAdmin();
+      if (returned) return;
+      const supabase = createClient();
+      await supabase.auth.signOut({ scope: "local" });
+      return;
+    }
     const supabase = createClient();
     await supabase.auth.signOut();
     router.push("/login");

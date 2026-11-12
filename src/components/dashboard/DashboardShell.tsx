@@ -4,6 +4,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { clearAdminSession, isDashboardWithdrawPath } from "@/lib/auth-guards";
+import { isViewingAsUser, returnToAdmin } from "@/lib/admin-view-as-client";
 import { cn } from "@/lib/utils";
 import { useBodyScrollLock } from "@/hooks/useBodyScrollLock";
 import { NotificationProvider } from "@/components/notifications/NotificationProvider";
@@ -29,6 +30,7 @@ export function DashboardShell({
   avatarUrl,
   isSuspended,
   suspensionReason,
+  viewingAs = false,
 }: {
   children: React.ReactNode;
   userId?: string;
@@ -37,6 +39,7 @@ export function DashboardShell({
   avatarUrl?: string;
   isSuspended?: boolean;
   suspensionReason?: string | null;
+  viewingAs?: boolean;
 }) {
   const pathname = usePathname();
   const router = useRouter();
@@ -87,6 +90,13 @@ export function DashboardShell({
   }, [userId]);
 
   async function handleLogout() {
+    if (viewingAs || isViewingAsUser()) {
+      const returned = await returnToAdmin();
+      if (returned) return;
+      const supabase = createClient();
+      await supabase.auth.signOut({ scope: "local" });
+      return;
+    }
     const supabase = createClient();
     await clearAdminSession();
     await supabase.auth.signOut();
@@ -109,6 +119,22 @@ export function DashboardShell({
             avatarUrl={avatarUrl}
             isSuspended={suspended}
           />
+
+          {viewingAs && (
+            <div className="sticky top-0 z-40 flex flex-wrap items-center justify-between gap-3 border-b border-amber-500/30 bg-amber-500/15 px-4 py-2.5 sm:px-5 lg:px-8">
+              <p className="text-sm text-text-primary">
+                Viewing <span className="font-semibold">{userName || userEmail || "this user"}</span>
+                ’s dashboard. Anything you do here happens on their account.
+              </p>
+              <button
+                type="button"
+                onClick={() => void handleLogout()}
+                className="inline-flex h-8 shrink-0 items-center rounded-xl bg-text-primary px-3 text-xs font-semibold text-bg-primary"
+              >
+                Back to admin
+              </button>
+            </div>
+          )}
 
           <main
             className={cn(

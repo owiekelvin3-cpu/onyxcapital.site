@@ -5,8 +5,7 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { validateReferralCode } from "@/lib/api/referrals";
-import { isDuplicateSignupUser, signupErrorMessage } from "@/lib/auth/email-otp";
-import { getAppUrl } from "@/lib/env";
+import { requestAuthEmail } from "@/lib/auth/request-auth-email";
 import { BRAND, MIN_ACCOUNT_AGE } from "@/lib/constants";
 import { COUNTRIES } from "@/lib/countries";
 import { AuthShell, AuthCardHeader } from "@/components/auth/AuthLayout";
@@ -161,36 +160,26 @@ export default function RegisterForm() {
     setLoading(true);
 
     const trimmedEmail = email.trim();
-    const supabase = createClient();
-    const appUrl = getAppUrl();
 
     try {
-      const { data, error: authError } = await supabase.auth.signUp({
+      const result = await requestAuthEmail("/api/auth/signup", {
         email: trimmedEmail,
         password,
-        options: {
-          emailRedirectTo: `${appUrl}/auth/callback?next=/dashboard`,
-          data: {
-            first_name: firstName.trim(),
-            last_name: lastName.trim(),
-            full_name: `${firstName.trim()} ${lastName.trim()}`,
-            date_of_birth: parsedDob,
-            phone: phone.trim() || null,
-            country: country.trim() || null,
-            address: address.trim() || null,
-            referral_code: referralCode.trim().toUpperCase() || null,
-          },
-        },
+        firstName: firstName.trim(),
+        lastName: lastName.trim(),
+        dateOfBirth: parsedDob,
+        phone: phone.trim(),
+        country: country.trim(),
+        address: address.trim(),
+        referralCode: referralCode.trim().toUpperCase(),
       });
 
-      if (authError) {
-        setError(signupErrorMessage(authError.message));
-        setLoading(false);
-        return;
-      }
-
-      if (isDuplicateSignupUser(data.user)) {
-        setError("An account with this email already exists. Sign in instead.");
+      if (!result.ok) {
+        if (result.created) {
+          router.push(`/verify-email?email=${encodeURIComponent(trimmedEmail)}&sent=0`);
+          return;
+        }
+        setError(result.error || "Could not create your account. Please try again.");
         setLoading(false);
         return;
       }

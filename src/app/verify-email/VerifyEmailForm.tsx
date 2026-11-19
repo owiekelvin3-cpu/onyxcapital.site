@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import { requestAuthEmail } from "@/lib/auth/request-auth-email";
 import { BRAND } from "@/lib/constants";
 import {
   EMAIL_OTP_LENGTH,
@@ -24,9 +25,11 @@ export default function VerifyEmailForm() {
   const [code, setCode] = useState("");
   const [error, setError] = useState("");
   const [info, setInfo] = useState(
-    searchParams.get("email")
-      ? "Enter the 6-digit code we sent to your email."
-      : "Enter your email, then the 6-digit code we sent."
+    searchParams.get("sent") === "0"
+      ? "Your account was saved, but the email did not go out. Resend the code."
+      : searchParams.get("email")
+        ? "Enter the 6-digit code from your email. Check the spam folder if it is not in your inbox."
+        : "Enter your email, then the 6-digit code we sent."
   );
   const [loading, setLoading] = useState(false);
   const [resending, setResending] = useState(false);
@@ -57,23 +60,26 @@ export default function VerifyEmailForm() {
 
     try {
       const supabase = createClient();
-      const { error: verifyError } = await supabase.auth.verifyOtp({
-        email: trimmedEmail,
-        token,
-        type: "signup",
-      });
-
-      if (verifyError) {
-        const { error: emailOtpError } = await supabase.auth.verifyOtp({
+      const types = ["signup", "email", "magiclink"] as const;
+      let lastError = "";
+      let verified = false;
+      for (const type of types) {
+        const { error: verifyError } = await supabase.auth.verifyOtp({
           email: trimmedEmail,
           token,
-          type: "email",
+          type,
         });
-        if (emailOtpError) {
-          setError(verifyOtpErrorMessage(verifyError.message || emailOtpError.message));
-          setLoading(false);
-          return;
+        if (!verifyError) {
+          verified = true;
+          break;
         }
+        lastError = verifyError.message;
+        if (!/invalid|otp|token|expired/.test(lastError.toLowerCase())) break;
+      }
+      if (!verified) {
+        setError(verifyOtpErrorMessage(lastError));
+        setLoading(false);
+        return;
       }
 
       setCode("");
@@ -93,14 +99,10 @@ export default function VerifyEmailForm() {
     setResending(true);
 
     try {
-      const supabase = createClient();
-      const { error: resendError } = await supabase.auth.resend({
-        type: "signup",
-        email: trimmedEmail,
-      });
+      const result = await requestAuthEmail("/api/auth/verify-resend", { email: trimmedEmail });
 
-      if (resendError) {
-        setError(resendOtpErrorMessage(resendError.message));
+      if (!result.ok) {
+        setError(resendOtpErrorMessage(result.error));
         setResending(false);
         return;
       }

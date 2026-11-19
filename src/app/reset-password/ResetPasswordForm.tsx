@@ -6,7 +6,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { friendlyAuthError } from "@/lib/auth/friendly-error";
 import { EMAIL_OTP_LENGTH, verifyOtpErrorMessage } from "@/lib/auth/email-otp";
-import { getAppUrl } from "@/lib/env";
+import { requestAuthEmail } from "@/lib/auth/request-auth-email";
 import { AuthShell, AuthCardHeader } from "@/components/auth/AuthLayout";
 import { AuthInput } from "@/components/auth/AuthInput";
 import { EmailOtpInput } from "@/components/auth/EmailOtpInput";
@@ -134,16 +134,13 @@ export default function ResetPasswordForm() {
     }
     setError("");
     setLoading(true);
-    const supabase = createClient();
-    const { error: resetError } = await supabase.auth.resetPasswordForEmail(trimmedEmail, {
-      redirectTo: `${getAppUrl()}/auth/callback?next=/reset-password`,
-    });
+    const result = await requestAuthEmail("/api/auth/recovery", { email: trimmedEmail });
     setLoading(false);
-    if (resetError) {
-      setError(friendlyAuthError(resetError.message, "Could not send a new code. Try again shortly."));
+    if (!result.ok) {
+      setError(result.error || "Could not send a new code. Try again shortly.");
       return;
     }
-    setSuccess("If an account exists for that email, we sent a new 6-digit code.");
+    setSuccess("If an account exists for that email, we sent a new 6-digit code. Check spam if it is not in your inbox.");
   }
 
   if (checking) {
@@ -161,7 +158,7 @@ export default function ResetPasswordForm() {
     <AuthShell panelTitle="Reset password" panelSubtitle="Choose a new password for your account.">
       <AuthCardHeader
         title="New password"
-        subtitle={ready ? "Use at least 8 characters" : "Enter the 6-digit code from your email, then choose a new password."}
+        subtitle={ready ? "Use at least 8 characters" : "Enter the 6-digit code from your email. Check spam if you do not see it."}
         alternate={{
           prompt: "Remember your password?",
           href: "/login",

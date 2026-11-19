@@ -3,9 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { createClient } from "@/lib/supabase/client";
-import { friendlyAuthError } from "@/lib/auth/friendly-error";
-import { getAppUrl } from "@/lib/env";
+import { requestAuthEmail } from "@/lib/auth/request-auth-email";
 import { AuthShell, AuthCardHeader } from "@/components/auth/AuthLayout";
 import { AuthInput } from "@/components/auth/AuthInput";
 import { Button } from "@/components/ui/Button";
@@ -22,27 +20,24 @@ export default function ForgotPasswordPage() {
     setError("");
     setLoading(true);
 
-    const supabase = createClient();
-    const { error: resetError } = await supabase.auth.resetPasswordForEmail(
-      email.trim(),
-      { redirectTo: `${getAppUrl()}/auth/callback?next=/reset-password` }
-    );
-
-    setLoading(false);
-    if (resetError) {
-      setError(
-        friendlyAuthError(resetError.message, "Could not send a reset email right now. Try again shortly.")
-      );
-      return;
+    try {
+      const result = await requestAuthEmail("/api/auth/recovery", { email: email.trim() });
+      setLoading(false);
+      if (!result.ok) {
+        setError(result.error || "Could not send a reset email right now. Try again shortly.");
+        return;
+      }
+      router.push(`/reset-password?email=${encodeURIComponent(email.trim())}`);
+    } catch {
+      setLoading(false);
+      setError("Network error. Check your connection and try again.");
     }
-
-    router.push(`/reset-password?email=${encodeURIComponent(email.trim())}`);
   }
 
   return (
     <AuthShell
       panelTitle="Reset your password"
-      panelSubtitle="We'll email you a 6-digit code to choose a new password."
+      panelSubtitle="We'll email you a 6-digit code. Check your inbox and your spam folder."
     >
       <AuthCardHeader
         title="Forgot password"

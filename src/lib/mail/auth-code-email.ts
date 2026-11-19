@@ -23,11 +23,11 @@ export function renderAuthCodeEmail(params: {
 }) {
   const code = params.code.replace(/\D/g, "");
   const subject = authCodeSubject(params.kind);
-  const intro =
-    params.kind === "signup"
-      ? "Use this code to finish creating your Onyx Capital account."
-      : "Use this code to choose a new Onyx Capital password.";
-  const buttonLabel = params.kind === "signup" ? "Confirm email" : "Reset password";
+  const isRecovery = params.kind === "recovery";
+  const intro = isRecovery
+    ? "Use the button below to choose a new Onyx Capital password. This link expires in 1 hour."
+    : "Use this code to finish creating your Onyx Capital account.";
+  const buttonLabel = isRecovery ? "Reset password" : "Confirm email";
   const actionLink =
     params.actionLink && params.actionLink.startsWith("https://") ? params.actionLink : "";
   const site = `https://${BRAND.domain}`;
@@ -61,9 +61,10 @@ export function renderAuthCodeEmail(params: {
             <tr>
               <td style="padding:28px;">
                 <p style="margin:0 0 16px;font-family:Arial,Helvetica,sans-serif;font-size:15px;line-height:1.6;color:${BODY};">${escapeHtml(intro)}</p>
-                <p style="margin:0;font-family:Arial,Helvetica,sans-serif;font-size:32px;letter-spacing:8px;font-weight:700;color:#ffffff;">${escapeHtml(code)}</p>
-                <p style="margin:16px 0 0;font-family:Arial,Helvetica,sans-serif;font-size:14px;line-height:1.6;color:${MUTED};">This code expires in 1 hour. You can also enter it at <a href="${page}" style="color:${LIME};text-decoration:none;">${page.replace("https://", "")}</a>.</p>
-                ${button}
+                ${isRecovery ? "" : `<p style="margin:0;font-family:Arial,Helvetica,sans-serif;font-size:32px;letter-spacing:8px;font-weight:700;color:#ffffff;">${escapeHtml(code)}</p>`}
+                ${isRecovery ? button : ""}
+                <p style="margin:16px 0 0;font-family:Arial,Helvetica,sans-serif;font-size:14px;line-height:1.6;color:${MUTED};">${isRecovery ? `Or copy this link:<br /><a href="${escapeHtml(actionLink)}" style="color:${LIME};text-decoration:none;word-break:break-all;">${escapeHtml(actionLink)}</a>` : `This code expires in 1 hour. You can also enter it at <a href="${page}" style="color:${LIME};text-decoration:none;">${page.replace("https://", "")}</a>.`}</p>
+                ${isRecovery ? "" : button}
               </td>
             </tr>
             <tr>
@@ -87,11 +88,11 @@ export function renderAuthCodeEmail(params: {
     "",
     intro,
     "",
-    `Code: ${code}`,
-    "",
-    "This code expires in 1 hour.",
-    `Enter it at ${page}`,
-    actionLink ? `${buttonLabel}: ${actionLink}` : "",
+    isRecovery ? "" : `Code: ${code}`,
+    isRecovery ? "" : "",
+    isRecovery ? "This link expires in 1 hour." : "This code expires in 1 hour.",
+    isRecovery ? (actionLink || page) : `Enter it at ${page}`,
+    !isRecovery && actionLink ? `${buttonLabel}: ${actionLink}` : "",
     "",
     "If you did not ask for this email, you can ignore it.",
     `${BRAND.fullName} · ${site}`,

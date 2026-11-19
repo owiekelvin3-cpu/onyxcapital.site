@@ -230,12 +230,17 @@ export async function issueRecoveryCode(emailInput: unknown): Promise<IssueResul
     return { ok: false, status: 400, error: signupErrorMessage(error.message) };
   }
 
-  if (!data.properties?.email_otp) return { ok: true };
+  const tokenHash = data.properties?.hashed_token;
+  const actionLink = tokenHash
+    ? `${getAppUrl()}/auth/confirm?token_hash=${encodeURIComponent(tokenHash)}&type=recovery&next=/reset-password`
+    : data.properties?.action_link;
+
+  if (!actionLink) return { ok: true };
 
   return deliver({
     email,
     kind: "recovery",
-    code: data.properties.email_otp,
-    actionLink: data.properties.action_link,
+    code: data.properties?.email_otp ?? "",
+    actionLink,
   });
 }

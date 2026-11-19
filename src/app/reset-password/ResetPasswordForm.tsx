@@ -140,7 +140,7 @@ export default function ResetPasswordForm() {
       setError(result.error || "Could not send a new code. Try again shortly.");
       return;
     }
-    setSuccess("If an account exists for that email, we sent a new 6-digit code. Check spam if it is not in your inbox.");
+    setSuccess("If an account exists for that email, we sent a new reset link. Open it from your inbox. Check spam if you do not see it.");
   }
 
   if (checking) {

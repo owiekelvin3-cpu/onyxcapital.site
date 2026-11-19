@@ -1,8 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { requestAuthEmail } from "@/lib/auth/request-auth-email";
 import { AuthShell, AuthCardHeader } from "@/components/auth/AuthLayout";
 import { AuthInput } from "@/components/auth/AuthInput";
@@ -10,10 +9,15 @@ import { Button } from "@/components/ui/Button";
 import { Loader2, Mail } from "@/components/icons";
 
 export default function ForgotPasswordPage() {
-  const router = useRouter();
   const [email, setEmail] = useState("");
   const [error, setError] = useState("");
+  const [sent, setSent] = useState(false);
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    const expired = new URLSearchParams(window.location.search).get("error") === "link";
+    if (expired) setError("That reset link has expired. Request a new one.");
+  }, []);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -27,7 +31,7 @@ export default function ForgotPasswordPage() {
         setError(result.error || "Could not send a reset email right now. Try again shortly.");
         return;
       }
-      router.push(`/reset-password?email=${encodeURIComponent(email.trim())}`);
+      setSent(true);
     } catch {
       setLoading(false);
       setError("Network error. Check your connection and try again.");
@@ -37,7 +41,7 @@ export default function ForgotPasswordPage() {
   return (
     <AuthShell
       panelTitle="Reset your password"
-      panelSubtitle="We'll email you a 6-digit code. Check your inbox and your spam folder."
+      panelSubtitle="We'll email you a link to choose a new password. Check your inbox and your spam folder."
     >
       <AuthCardHeader
         title="Forgot password"
@@ -62,6 +66,12 @@ export default function ForgotPasswordPage() {
           required
         />
 
+        {sent && (
+          <p className="text-[13px] text-green bg-green/[0.08] border border-green/30 rounded-lg px-4 py-3">
+            If an account exists for that email, we sent a reset link. Open it to choose a new password. Check spam if it is not in your inbox.
+          </p>
+        )}
+
         {error && (
           <p
             role="alert"
@@ -78,7 +88,7 @@ export default function ForgotPasswordPage() {
               Sending...
             </span>
           ) : (
-            "Send reset code"
+            "Send reset link"
           )}
         </Button>
 

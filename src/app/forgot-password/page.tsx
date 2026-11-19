@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { friendlyAuthError } from "@/lib/auth/friendly-error";
 import { getAppUrl } from "@/lib/env";
@@ -11,15 +12,14 @@ import { Button } from "@/components/ui/Button";
 import { Loader2, Mail } from "@/components/icons";
 
 export default function ForgotPasswordPage() {
+  const router = useRouter();
   const [email, setEmail] = useState("");
   const [error, setError] = useState("");
-  const [success, setSuccess] = useState("");
   const [loading, setLoading] = useState(false);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError("");
-    setSuccess("");
     setLoading(true);
 
     const supabase = createClient();
@@ -28,20 +28,21 @@ export default function ForgotPasswordPage() {
       { redirectTo: `${getAppUrl()}/auth/callback?next=/reset-password` }
     );
 
+    setLoading(false);
     if (resetError) {
       setError(
         friendlyAuthError(resetError.message, "Could not send a reset email right now. Try again shortly.")
       );
-    } else {
-      setSuccess("If an account exists for that email, we sent a reset link.");
+      return;
     }
-    setLoading(false);
+
+    router.push(`/reset-password?email=${encodeURIComponent(email.trim())}`);
   }
 
   return (
     <AuthShell
       panelTitle="Reset your password"
-      panelSubtitle="We'll email you a secure link to choose a new password."
+      panelSubtitle="We'll email you a 6-digit code to choose a new password."
     >
       <AuthCardHeader
         title="Forgot password"
@@ -66,11 +67,6 @@ export default function ForgotPasswordPage() {
           required
         />
 
-        {success && (
-          <p className="text-[13px] text-green bg-green/[0.08] border border-green/30 rounded-lg px-4 py-3">
-            {success}
-          </p>
-        )}
         {error && (
           <p
             role="alert"
@@ -87,7 +83,7 @@ export default function ForgotPasswordPage() {
               Sending...
             </span>
           ) : (
-            "Send reset link"
+            "Send reset code"
           )}
         </Button>
 

@@ -41,7 +41,7 @@ function applyTheme(theme: ColorTheme) {
 }
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
-  const [theme, setThemeState] = useState<ColorTheme>(() => readStoredTheme() ?? DEFAULT_THEME);
+  const [theme, setThemeState] = useState<ColorTheme>(DEFAULT_THEME);
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {

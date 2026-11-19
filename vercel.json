@@ -1,5 +1,6 @@
 {
   "framework": "nextjs",
+  "fluid": false,
   "buildCommand": "npm run build",
   "installCommand": "npm install"
 }

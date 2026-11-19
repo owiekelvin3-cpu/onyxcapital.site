@@ -6,7 +6,6 @@ import { BRAND } from "@/lib/constants";
 import { getAppUrl } from "@/lib/env";
 import { I18nProvider } from "@/components/i18n/I18nProvider";
 import { ThemeProvider } from "@/components/theme/ThemeProvider";
-import { ThemeScript } from "@/components/theme/ThemeScript";
 import { PwaProvider } from "@/components/pwa/PwaProvider";
 import { SmartsuppChat } from "@/components/smartsupp/SmartsuppChat";
 
@@ -115,16 +114,13 @@ export const viewport: Viewport = {
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html lang="en" className={`${inter.variable} dark h-full`} suppressHydrationWarning>
-      <head>
-        <ThemeScript />
-        <style
+      <body className="min-h-dvh w-full antialiased bg-bg-primary text-text-primary">
+        <script
           dangerouslySetInnerHTML={{
             __html:
-              'html:not(.smartsupp-chat-open) iframe[src*="smartsupp"],html:not(.smartsupp-chat-open) iframe[title*="Smartsupp" i],html:not(.smartsupp-chat-open) #chat-application,html:not(.smartsupp-chat-open) #smartsupp-widget-container,html:not(.smartsupp-chat-open) [id^="smartsupp"]:not(script){opacity:0!important;visibility:hidden!important;pointer-events:none!important;transform:translate(120vw,120vh)!important}',
+              '(function(){try{var s=localStorage.getItem("onyx-theme");var d=s!=="light";if(d)document.documentElement.classList.add("dark");else document.documentElement.classList.remove("dark");}catch(e){document.documentElement.classList.add("dark");}})();',
           }}
         />
-      </head>
-      <body className="min-h-dvh w-full antialiased bg-bg-primary text-text-primary">
         <ThemeProvider>
           <PwaProvider>
             <I18nProvider>

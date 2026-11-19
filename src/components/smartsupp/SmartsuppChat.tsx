@@ -55,9 +55,7 @@ function readStoredPos(): Pos {
 export function SmartsuppChat() {
   const pathname = usePathname() || "/";
   const hidden = pathname.startsWith("/admin");
-  const [pos, setPos] = useState<Pos | null>(() =>
-    typeof window === "undefined" ? null : readStoredPos()
-  );
+  const [pos, setPos] = useState<Pos | null>(null);
   const [chatOpen, setChatOpen] = useState(false);
   const [dragging, setDragging] = useState(false);
   const dragRef = useRef<{

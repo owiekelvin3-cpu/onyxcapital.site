@@ -93,16 +93,46 @@ const NATIVE_LAUNCHER_SELECTOR = [
   'iframe[title*="Smartsupp" i]',
   "#chat-application",
   "#smartsupp-widget-container",
+  "#widgetButtonFrame",
 ].join(",");
 
+const LAUNCHER_STYLE_PROPS = [
+  "position",
+  "left",
+  "top",
+  "width",
+  "height",
+  "max-width",
+  "max-height",
+  "margin",
+  "overflow",
+  "opacity",
+  "visibility",
+  "pointer-events",
+  "transform",
+];
+
 function hideNativeLauncher() {
-  if (typeof document === "undefined" || chatOpen) return;
+  if (typeof document === "undefined") return;
   document.querySelectorAll(NATIVE_LAUNCHER_SELECTOR).forEach((node) => {
     if (!(node instanceof HTMLElement)) return;
+    if (chatOpen) {
+      for (const prop of LAUNCHER_STYLE_PROPS) node.style.removeProperty(prop);
+      return;
+    }
+    node.style.setProperty("position", "fixed", "important");
+    node.style.setProperty("left", "0", "important");
+    node.style.setProperty("top", "0", "important");
+    node.style.setProperty("width", "0", "important");
+    node.style.setProperty("height", "0", "important");
+    node.style.setProperty("max-width", "0", "important");
+    node.style.setProperty("max-height", "0", "important");
+    node.style.setProperty("margin", "0", "important");
+    node.style.setProperty("overflow", "hidden", "important");
     node.style.setProperty("opacity", "0", "important");
     node.style.setProperty("visibility", "hidden", "important");
     node.style.setProperty("pointer-events", "none", "important");
-    node.style.setProperty("transform", "translate(120vw, 120vh)", "important");
+    node.style.setProperty("transform", "none", "important");
   });
 }
 

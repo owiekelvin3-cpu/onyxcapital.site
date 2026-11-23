@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import type { AdminTradeRow } from "@/lib/admin-types";
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
@@ -17,10 +17,56 @@ function tradeNotional(row: AdminTradeRow) {
   return Number(row.amount) * Number(row.price);
 }
 
+function baseAsset(symbol: string) {
+  const base = symbol.split("/")[0]?.trim().toUpperCase();
+  return base || symbol.trim().toUpperCase();
+}
+
+function roundQty(value: number) {
+  return Math.round(value * 1e8) / 1e8;
+}
+
+/** Later sells close earlier buys of the same coin, oldest first. */
+function closedQuantityByTrade(rows: AdminTradeRow[]) {
+  const closed = new Map<string, number>();
+  const queues = new Map<string, { id: string; remaining: number }[]>();
+  const ordered = [...rows].sort(
+    (a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+  );
+
+  for (const row of ordered) {
+    const key = `${row.user_id}:${baseAsset(row.asset)}`;
+    const queue = queues.get(key) ?? [];
+    const qty = Number(row.amount);
+    if (row.type === "buy") {
+      queue.push({ id: row.id, remaining: qty });
+      queues.set(key, queue);
+      continue;
+    }
+    let left = qty;
+    while (left > 1e-8 && queue.length > 0) {
+      const head = queue[0];
+      const take = Math.min(head.remaining, left);
+      head.remaining -= take;
+      left -= take;
+      closed.set(head.id, (closed.get(head.id) ?? 0) + take);
+      if (head.remaining <= 1e-8) queue.shift();
+    }
+    queues.set(key, queue);
+  }
+
+  return closed;
+}
+
 export default function AdminTradesPage() {
   const [rows, setRows] = useState<AdminTradeRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<Filter>("all");
+  const [profitDraft, setProfitDraft] = useState<Record<string, string>>({});
+  const [busyId, setBusyId] = useState<string | null>(null);
+  const [confirmId, setConfirmId] = useState<string | null>(null);
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -56,6 +102,8 @@ export default function AdminTradesPage() {
     };
   }, [load]);
 
+  const closedById = useMemo(() => closedQuantityByTrade(rows), [rows]);
+
   const filtered = rows.filter((row) => {
     if (filter === "buy") return row.type === "buy";
     if (filter === "sell") return row.type === "sell";
@@ -66,11 +114,100 @@ export default function AdminTradesPage() {
     (row) => Date.now() - new Date(row.created_at).getTime() < 24 * 60 * 60 * 1000
   ).length;
 
+  function openRemainder(row: AdminTradeRow) {
+    return Math.max(0, roundQty(Number(row.amount) - (closedById.get(row.id) ?? 0)));
+  }
+
+  async function addProfit(row: AdminTradeRow) {
+    const amount = Number(profitDraft[row.id]);
+    if (!Number.isFinite(amount) || amount <= 0) {
+      setError("Enter a profit amount greater than zero.");
+      setSuccess("");
+      return;
+    }
+    setBusyId(row.id);
+    setError("");
+    setSuccess("");
+    const supabase = createClient();
+    const { error: rpcError } = await supabase.rpc("admin_add_trade_profit", {
+      p_trade_id: row.id,
+      p_amount: Math.round(amount * 100) / 100,
+      p_note: null,
+    });
+    setBusyId(null);
+    if (rpcError) {
+      setError(rpcError.message);
+      return;
+    }
+    setProfitDraft((current) => ({ ...current, [row.id]: "" }));
+    setSuccess(`Profit of ${formatCurrency(amount)} added. You can close the trade when you are ready.`);
+    await load();
+  }
+
+  async function closeTrade(row: AdminTradeRow) {
+    if (confirmId !== row.id) {
+      setConfirmId(row.id);
+      setError("");
+      return;
+    }
+    const remainder = openRemainder(row);
+    if (remainder <= 0) {
+      setError("That trade is already closed.");
+      setConfirmId(null);
+      return;
+    }
+
+    setBusyId(row.id);
+    setError("");
+    setSuccess("");
+    const supabase = createClient();
+    const asset = baseAsset(row.asset);
+    const { data: holding, error: holdingError } = await supabase
+      .from("holdings")
+      .select("quantity")
+      .eq("user_id", row.user_id)
+      .eq("asset", asset)
+      .maybeSingle();
+
+    if (holdingError) {
+      setBusyId(null);
+      setError(holdingError.message);
+      return;
+    }
+
+    const held = Number(holding?.quantity ?? 0);
+    const qty = roundQty(Math.min(remainder, held));
+    if (qty <= 0) {
+      setBusyId(null);
+      setConfirmId(null);
+      setError("That position is already closed.");
+      await load();
+      return;
+    }
+
+    const { error: insertError } = await supabase.from("trades").insert({
+      user_id: row.user_id,
+      asset: row.asset,
+      type: "sell",
+      amount: qty,
+      price: Number(row.price),
+      status: "completed",
+    });
+    setBusyId(null);
+    setConfirmId(null);
+    if (insertError) {
+      setError(insertError.message);
+      return;
+    }
+    setSuccess(`${row.asset} trade closed. ${formatCurrency(qty * Number(row.price))} was returned to the account.`);
+    await load();
+  }
+
   return (
     <div className="space-y-5 max-w-5xl">
       <AdminPageHeader
         title="Live trades"
-        subtitle="Get notified when a user places a buy or sell on Live Trading."
+        subtitle="Add profit to a buy, then close it. Closing sells the position and returns the trade amount."
         notificationCount={recentCount}
         action={
           <Button variant="outline" size="sm" onClick={() => void load()} disabled={loading}>
@@ -79,6 +216,13 @@ export default function AdminTradesPage() {
           </Button>
         }
       />
+
+      {error && (
+        <p className="rounded-lg border border-red/30 bg-red/10 px-4 py-3 text-sm text-red">{error}</p>
+      )}
+      {success && (
+        <p className="rounded-lg border border-green/30 bg-green/10 px-4 py-3 text-sm text-green">{success}</p>
+      )}
 
       <AdminFilterBar
         value={filter}
@@ -100,32 +244,72 @@ export default function AdminTradesPage() {
             {filtered.map((row) => {
               const userLabel = row.profiles?.full_name || row.profiles?.email || row.user_id.slice(0, 8);
               const buy = row.type === "buy";
+              const remainder = buy ? openRemainder(row) : 0;
+              const open = buy && remainder > 0;
+              const profit = Number(row.profit ?? 0);
+              const busy = busyId === row.id;
               return (
-                <li key={row.id} className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center">
-                  <div className="min-w-0 flex-1">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <p className="text-sm font-semibold text-text-primary">{userLabel}</p>
-                      <span
-                        className={cn(
-                          "rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase",
-                          buy ? "bg-green/10 text-green" : "bg-red/10 text-red"
+                <li key={row.id} className="flex flex-col gap-3 p-4">
+                  <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+                    <div className="min-w-0 flex-1">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <p className="text-sm font-semibold text-text-primary">{userLabel}</p>
+                        <span
+                          className={cn(
+                            "rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase",
+                            buy ? "bg-green/10 text-green" : "bg-red/10 text-red"
+                          )}
+                        >
+                          {row.type}
+                        </span>
+                        <StatusBadge status={open ? "pending" : row.status} />
+                        {buy && !open && (
+                          <span className="rounded-full bg-bg-secondary px-2 py-0.5 text-[10px] font-semibold uppercase text-text-tertiary">
+                            Closed
+                          </span>
                         )}
-                      >
-                        {row.type}
-                      </span>
-                      <StatusBadge status={row.status} />
+                      </div>
+                      <p className="mt-1 text-sm text-text-secondary">
+                        {row.asset} · {Number(row.amount).toLocaleString(undefined, { maximumFractionDigits: 8 })}{" "}
+                        @ {formatCurrency(Number(row.price))}
+                      </p>
+                      <p className="mt-0.5 text-xs text-text-tertiary">
+                        {row.profiles?.email} · {formatDate(row.created_at)}
+                        {profit > 0 ? ` · Profit ${formatCurrency(profit)}` : ""}
+                      </p>
                     </div>
-                    <p className="mt-1 text-sm text-text-secondary">
-                      {row.asset} · {Number(row.amount).toLocaleString(undefined, { maximumFractionDigits: 8 })}{" "}
-                      @ {formatCurrency(Number(row.price))}
-                    </p>
-                    <p className="mt-0.5 text-xs text-text-tertiary">
-                      {row.profiles?.email} · {formatDate(row.created_at)}
+                    <p className="text-lg font-bold tabular-nums text-text-primary">
+                      {formatCurrency(tradeNotional(row))}
                     </p>
                   </div>
-                  <p className="text-lg font-bold tabular-nums text-text-primary">
-                    {formatCurrency(tradeNotional(row))}
-                  </p>
+
+                  {open && (
+                    <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+                      <input
+                        type="number"
+                        min={0.01}
+                        step="0.01"
+                        inputMode="decimal"
+                        placeholder="Profit amount"
+                        value={profitDraft[row.id] ?? ""}
+                        onChange={(event) =>
+                          setProfitDraft((current) => ({ ...current, [row.id]: event.target.value }))
+                        }
+                        className="h-10 w-full rounded-lg border border-border bg-bg-primary px-3 text-sm text-text-primary sm:max-w-[180px]"
+                      />
+                      <Button size="sm" disabled={busy} onClick={() => void addProfit(row)}>
+                        Add profit
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="secondary"
+                        disabled={busy}
+                        onClick={() => void closeTrade(row)}
+                      >
+                        {confirmId === row.id ? "Confirm close" : "Close trade"}
+                      </Button>
+                    </div>
+                  )}
                 </li>
               );
             })}

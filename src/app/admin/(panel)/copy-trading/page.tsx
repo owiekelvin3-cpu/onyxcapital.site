@@ -38,6 +38,7 @@ export default function AdminCopyTradingPage() {
   const [amount, setAmount] = useState("");
   const [note, setNote] = useState("");
   const [busy, setBusy] = useState(false);
+  const [confirmUncopyId, setConfirmUncopyId] = useState<string | null>(null);
   const [traders, setTraders] = useState<CopyTraderProfile[]>([]);
 
   const loadTraders = useCallback(async () => {
@@ -102,6 +103,43 @@ export default function AdminCopyTradingPage() {
       setBusy(false);
     }
   };
+
+  async function uncopy(row: CopySubRow) {
+    if (confirmUncopyId !== row.id) {
+      setConfirmUncopyId(row.id);
+      setError("");
+      setSuccess("");
+      return;
+    }
+
+    setBusy(true);
+    setError("");
+    setSuccess("");
+    try {
+      const supabase = createClient();
+      const { data, error: updateError } = await supabase
+        .from("copy_trading_subscriptions")
+        .update({ status: "cancelled" })
+        .eq("id", row.id)
+        .eq("status", "active")
+        .select("id");
+      if (updateError) throw new Error(updateError.message);
+      if (!data?.length) throw new Error(t("admin.copyTradingUncopyFailed"));
+      setSuccess(
+        t("admin.copyTradingUncopied", {
+          user: row.profiles?.full_name || row.profiles?.email || "This user",
+          trader: row.trader_name,
+        })
+      );
+      setConfirmUncopyId(null);
+      setOpenId(null);
+      await load();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : t("admin.copyTradingUncopyFailed"));
+    } finally {
+      setBusy(false);
+    }
+  }
 
   const submitSigned = (subId: string, mode: "profit" | "loss") => {
     const raw = Math.abs(parseFloat(amount));
@@ -254,6 +292,21 @@ export default function AdminCopyTradingPage() {
                               {t("admin.copyTradingAddLoss")}
                             </Button>
                           </div>
+                        </div>
+                      ) : null}
+                      {canAdjust ? (
+                        <div className="mt-3 flex justify-end">
+                          <Button
+                            size="sm"
+                            variant="secondary"
+                            disabled={busy}
+                            onClick={() => void uncopy(row)}
+                            className="!text-red"
+                          >
+                            {confirmUncopyId === row.id
+                              ? t("admin.copyTradingUncopyConfirm")
+                              : t("admin.copyTradingUncopy")}
+                          </Button>
                         </div>
                       ) : (
                         <p className="text-sm text-text-tertiary">{t("admin.copyTradingOnlyActive")}</p>
